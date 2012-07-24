@@ -1176,7 +1176,7 @@ PHONY += prepare archprepare
 
 archprepare: outputmakefile archheaders archscripts scripts include/config/kernel.release \
 	asm-generic $(version_h) $(autoksyms_h) include/generated/utsrelease.h \
-	include/generated/autoconf.h
+	include/generated/autoconf.h include/generated/package.h
 
 prepare0: archprepare
 	$(Q)$(MAKE) $(build)=scripts/mod
@@ -1255,12 +1255,25 @@ define filechk_version.h
 	echo '#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))'
 endef
 
+ifneq ($(DISTRIBUTION_OFFICIAL_BUILD),)
+define filechk_package.h
+	echo \#define LINUX_PACKAGE_ID \" $(DISTRIBUTOR) $(DISTRIBUTION_VERSION)\"
+endef
+else
+define filechk_package.h
+	echo \#define LINUX_PACKAGE_ID \"\"
+endef
+endif
+
 $(version_h): FORCE
 	$(call filechk,version.h)
 	$(Q)rm -f $(old_version_h)
 
 include/generated/utsrelease.h: include/config/kernel.release FORCE
 	$(call filechk,utsrelease.h)
+
+include/generated/package.h: $(srctree)/Makefile FORCE
+	$(call filechk,package.h)
 
 PHONY += headerdep
 headerdep:
