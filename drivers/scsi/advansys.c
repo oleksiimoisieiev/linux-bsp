@@ -4103,8 +4103,6 @@ static int AscInitAsc1000Driver(ASC_DVC_VAR *asc_dvc)
 
 	err = request_firmware(&fw, fwname, asc_dvc->drv_ptr->dev);
 	if (err) {
-		printk(KERN_ERR "Failed to load image \"%s\" err %d\n",
-		       fwname, err);
 		asc_dvc->err_code |= ASC_IERR_MCODE_CHKSUM;
 		return err;
 	}
@@ -4469,8 +4467,6 @@ static int AdvInitAsc3550Driver(ADV_DVC_VAR *asc_dvc)
 
 	err = request_firmware(&fw, fwname, asc_dvc->drv_ptr->dev);
 	if (err) {
-		printk(KERN_ERR "Failed to load image \"%s\" err %d\n",
-		       fwname, err);
 		asc_dvc->err_code = ASC_IERR_MCODE_CHKSUM;
 		return err;
 	}
@@ -4969,8 +4965,6 @@ static int AdvInitAsc38C0800Driver(ADV_DVC_VAR *asc_dvc)
 
 	err = request_firmware(&fw, fwname, asc_dvc->drv_ptr->dev);
 	if (err) {
-		printk(KERN_ERR "Failed to load image \"%s\" err %d\n",
-		       fwname, err);
 		asc_dvc->err_code = ASC_IERR_MCODE_CHKSUM;
 		return err;
 	}
@@ -5457,8 +5451,6 @@ static int AdvInitAsc38C1600Driver(ADV_DVC_VAR *asc_dvc)
 
 	err = request_firmware(&fw, fwname, asc_dvc->drv_ptr->dev);
 	if (err) {
-		printk(KERN_ERR "Failed to load image \"%s\" err %d\n",
-		       fwname, err);
 		asc_dvc->err_code = ASC_IERR_MCODE_CHKSUM;
 		return err;
 	}
