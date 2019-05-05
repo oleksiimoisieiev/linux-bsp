@@ -22,11 +22,13 @@ static int mod_is_hash_blacklisted(const void *mod, size_t verifylen)
 	struct shash_desc *desc;
 	size_t digest_size, desc_size;
 	u8 *digest;
-	int ret = 0;
+	int ret;
 
 	tfm = crypto_alloc_shash("sha256", 0, 0);
-	if (IS_ERR(tfm))
+	if (IS_ERR(tfm)) {
+		ret = PTR_ERR(tfm);
 		goto error_return;
+	}
 
 	desc_size = crypto_shash_descsize(tfm) + sizeof(*desc);
 	digest_size = crypto_shash_digestsize(tfm);
