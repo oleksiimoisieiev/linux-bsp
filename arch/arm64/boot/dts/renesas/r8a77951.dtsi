@@ -2436,7 +2436,8 @@
 				<0 0xec541000 0 0x280>,  /* SSI */
 				<0 0xec760000 0 0x200>,  /* Audio DMAC peri peri*/
 				<0 0xec000000 0 0x1000>,
-				<0 0xec008000 0 0x1000>;
+				<0 0xec008000 0 0x1000>,
+				<0 0xec100000 0 0x100000>;
 			reg-names = "scu", "adg", "ssiu", "ssi", "audmapp";
 
 			clocks = <&cpg CPG_MOD 1005>,
