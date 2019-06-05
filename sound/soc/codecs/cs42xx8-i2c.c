@@ -17,11 +17,27 @@
 
 #include "cs42xx8.h"
 
+const struct of_device_id cs42xx8_of_match[] = {
+	{ .compatible = "cirrus,cs42448", .data = &cs42448_data, },
+	{ .compatible = "cirrus,cs42888", .data = &cs42888_data, },
+	{ /* sentinel */ }
+};
+
 static int cs42xx8_i2c_probe(struct i2c_client *i2c,
 			     const struct i2c_device_id *id)
 {
-	int ret = cs42xx8_probe(&i2c->dev,
-			devm_regmap_init_i2c(i2c, &cs42xx8_regmap_config));
+	const struct of_device_id *of_id;
+	int ret;
+	
+	of_id = i2c_of_match_device(cs42xx8_of_match, i2c);
+	if (!of_id || !of_id->data) {
+		dev_err(&i2c->dev, "failed to find driver data\n");
+		return -EINVAL;
+	}
+
+	ret = cs42xx8_probe(&i2c->dev,
+			    devm_regmap_init_i2c(i2c, &cs42xx8_regmap_config),
+			    of_id->data);
 	if (ret)
 		return ret;
 
@@ -44,6 +60,7 @@ static struct i2c_device_id cs42xx8_i2c_id[] = {
 	{}
 };
 MODULE_DEVICE_TABLE(i2c, cs42xx8_i2c_id);
+MODULE_DEVICE_TABLE(of, cs42xx8_of_match);
 
 static struct i2c_driver cs42xx8_i2c_driver = {
 	.driver = {
