@@ -108,6 +108,7 @@ deploy_libc_headers () {
 
 version=$KERNELRELEASE
 tmpdir=debian/linux-image
+mod_dir=debian/linux-modules
 dbg_dir=debian/linux-image-dbg
 packagename=linux-image-$version
 dbg_packagename=$packagename-dbg
@@ -133,7 +134,7 @@ esac
 BUILD_DEBUG=$(if_enabled_echo CONFIG_DEBUG_INFO Yes)
 
 # Setup the directory structure
-rm -rf "$tmpdir" "$dbg_dir" debian/files
+rm -rf "$tmpdir" "$mod_dir" "$dbg_dir" debian/files
 mkdir -m 755 -p "$tmpdir/DEBIAN"
 mkdir -p "$tmpdir/lib" "$tmpdir/boot"
 
@@ -152,33 +153,33 @@ cp "$($MAKE -s -f $srctree/Makefile image_name)" "$tmpdir/$installed_image_path"
 if is_enabled CONFIG_OF_EARLY_FLATTREE; then
 	# Only some architectures with OF support have this target
 	if [ -d "${srctree}/arch/$SRCARCH/boot/dts" ]; then
-		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/usr/lib/$packagename" dtbs_install
+		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/boot/dtbs" dtbs_install
 	fi
 fi
 
 if is_enabled CONFIG_MODULES; then
-	INSTALL_MOD_PATH="$tmpdir" $MAKE -f $srctree/Makefile modules_install
-	rm -f "$tmpdir/lib/modules/$version/build"
-	rm -f "$tmpdir/lib/modules/$version/source"
+	INSTALL_MOD_PATH="$mod_dir" $MAKE -f $srctree/Makefile modules_install
+	rm -f "$mod_dir/lib/modules/$version/build"
+	rm -f "$mod_dir/lib/modules/$version/source"
 	if [ "$ARCH" = "um" ] ; then
 		mv "$tmpdir/lib/modules/$version"/* "$tmpdir/usr/lib/uml/modules/$version/"
 		rmdir "$tmpdir/lib/modules/$version"
 	fi
 	if [ -n "$BUILD_DEBUG" ] ; then
-		for module in $(find $tmpdir/lib/modules/ -name *.ko -printf '%P\n'); do
+		for module in $(find $mod_dir/lib/modules/ -name *.ko -printf '%P\n'); do
 			module=lib/modules/$module
 			mkdir -p $(dirname $dbg_dir/usr/lib/debug/$module)
 			# only keep debug symbols in the debug file
-			$OBJCOPY --only-keep-debug $tmpdir/$module $dbg_dir/usr/lib/debug/$module
+			$OBJCOPY --only-keep-debug $mod_dir/$module $dbg_dir/usr/lib/debug/$module
 			# strip original module from debug symbols
-			$OBJCOPY --strip-debug $tmpdir/$module
+			$OBJCOPY --strip-debug $mod_dir/$module
 			# then add a link to those
-			$OBJCOPY --add-gnu-debuglink=$dbg_dir/usr/lib/debug/$module $tmpdir/$module
+			$OBJCOPY --add-gnu-debuglink=$dbg_dir/usr/lib/debug/$module $mod_dir/$module
 		done
 
 		# resign stripped modules
 		if is_enabled CONFIG_MODULE_SIG_ALL; then
-			INSTALL_MOD_PATH="$tmpdir" $MAKE -f $srctree/Makefile modules_sign
+			INSTALL_MOD_PATH="$mod_dir" $MAKE -f $srctree/Makefile modules_sign
 		fi
 	fi
 fi
@@ -219,6 +220,8 @@ if [ "$ARCH" != "um" ]; then
 fi
 
 create_package "$packagename" "$tmpdir"
+
+create_package linux-modules-$version "$mod_dir"
 
 if [ -n "$BUILD_DEBUG" ] ; then
 	# Build debug package
