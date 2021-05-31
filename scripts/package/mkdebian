@@ -181,8 +181,13 @@ Homepage: https://www.kernel.org/
 Package: $packagename-$version
 Architecture: $debarch
 Description: Linux kernel, version $version
- This package contains the Linux kernel, modules and corresponding other
+ This package contains the Linux kernel and corresponding other
  files, version: $version.
+
+Package: linux-modules-$version
+Architecture: $debarch
+Description: Linux modules, version $version
+ This package contains the Linux modules files, version: $version.
 
 Package: linux-libc-dev
 Section: devel
