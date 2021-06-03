@@ -232,7 +232,11 @@
 
 	passthrough_always_on {
 		compatible = "xen-troops,passthrough";
-		clocks = <&cpg CPG_MOD 931>, <&cpg CPG_MOD 930>;
+		clocks = <&cpg CPG_MOD 703>, <&cpg CPG_MOD 704>, /* hsusb */
+				 <&cpg CPG_MOD 330>, /* usb_dmac0 */
+				 <&cpg CPG_MOD 331>, /* usb_dmac1 */
+				 <&cpg CPG_MOD 328>, /* xhci0 */
+				 <&cpg CPG_MOD 702>; /* ohci1 */ /* ehci1 */
 	};
 
 };
@@ -563,3 +567,38 @@
 };
 
 /* ============================ Xen pass through section =====================*/
+
+&xhci0			{
+	compatible = "xen-troops,passthrough";
+	xen,passthrough;
+};
+
+&ohci0			{
+	compatible = "xen-troops,passthrough";
+	xen,passthrough;
+};
+
+&ohci1			{
+	compatible = "xen-troops,passthrough";
+	xen,passthrough;
+};
+
+&ehci0			{
+	compatible = "xen-troops,passthrough";
+	xen,passthrough;
+};
+
+&ehci1			{
+	compatible = "xen-troops,passthrough";
+	xen,passthrough;
+};
+
+&usb2_phy0			{
+	compatible = "xen-troops,passthrough";
+	xen,passthrough;
+};
+
+&usb2_phy1			{
+	compatible = "xen-troops,passthrough";
+	xen,passthrough;
+};
