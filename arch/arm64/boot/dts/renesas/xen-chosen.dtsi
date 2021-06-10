@@ -14,7 +14,6 @@
 		stdout-path = "serial0:115200n8";
 		xen,xen-bootargs = "dom0_mem=800M console=dtuart dtuart=serial0 dom0_max_vcpus=4 bootscrub=0 loglvl=info sched_ratelimit_us=100 hmp-unsafe=true xsm=dummy";
 		xen,dom0-bootargs = "console=hvc0 earlycon ignore_loglevel clk_ignore_unused root=/dev/mmcblk0p2";
-//		xen,dom0-bootargs = "console=hvc0 earlycon ignore_loglevel clk_ignore_unused root=/dev/nfs rw nfsroot=192.168.0.100:/home/testpc1/nfs/dom0,nfsvers=3,rw ip=dhcp apparmor=0 fsck.mode=skip";
 
 		#address-cells = <0x02>;
 		#size-cells = <0x02>;

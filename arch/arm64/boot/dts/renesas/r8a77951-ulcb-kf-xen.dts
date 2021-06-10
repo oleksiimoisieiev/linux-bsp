@@ -612,7 +612,10 @@
 &audma1 /* dma-controller@ec720000*/				{ xen,passthrough; };
 &rt_dmac0 /* dma-controller@ffc10000*/				{ xen,passthrough; };
 &rt_dmac1 /* dma-controller@ffc20000*/				{ xen,passthrough; };
-//&avb /* ethernet@e6800000*/						{ xen,passthrough; };
+&avb /* ethernet@e6800000*/ {
+	compatible = "xen-troops,passthrough";
+	xen,passthrough;
+};
 //&fcpvd0 /* fcp@fea27000*/							{ xen,passthrough; };
 //&fcpvd1 /* fcp@fea2f000*/							{ xen,passthrough; };
 //&fcpvd2 /* fcp@fea37000*/							{ xen,passthrough; };

@@ -33,6 +33,8 @@ dtb-$(CONFIG_ARCH_R8A77951) += r8a77951-ulcb.dtb
 dtb-$(CONFIG_ARCH_R8A77951) += r8a77951-ulcb-kf.dtb
 dtb-$(CONFIG_ARCH_R8A77951) += r8a77951-ulcb-kf-xen.dtb
 dtb-$(CONFIG_ARCH_R8A77951) += r8a77951-ulcb-kf-domu.dtb
+dtb-$(CONFIG_ARCH_R8A77951) += r8a77951-ulcb-kf-xen-nfs.dtb
+dtb-$(CONFIG_ARCH_R8A77951) += r8a77951-ulcb-kf-domu-nfs.dtb
 
 dtb-$(CONFIG_ARCH_R8A77951) += r8a779m1-salvator-x.dtb
 dtb-$(CONFIG_ARCH_R8A77951) += r8a779m1-salvator-xs.dtb
