@@ -380,7 +380,6 @@
 	/delete-property/clocks;
 	/delete-property/resets;
 	/delete-property/power-domains;
-	status = "disabled";
 };
 &fcpvd0 /* fcp@fea27000*/
 {
