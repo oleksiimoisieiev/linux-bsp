@@ -12,6 +12,26 @@
 
 set -e
 
+DOMU_IMAGE_DIR="xt/domu"
+
+# build linux image package for dom0 or domu
+case "$KDEB_BUILD_DOM" in
+	domu)
+		boot_xt_domu=$DOMU_IMAGE_DIR
+
+		echo "" >&2
+		echo "Build debball for domu" >&2
+		echo "" >&2
+	;;
+	*)
+		boot_xt_domu="boot"
+
+		echo "" >&2
+		echo "Build debball for arch: $ARCH " >&2
+		echo "" >&2
+	;;
+esac
+
 is_enabled() {
 	grep -q "^$1=y" include/config/auto.conf
 }
@@ -29,10 +49,17 @@ create_package() {
 	local dpkg_deb_opts
 
 	mkdir -m 755 -p "$pdir/DEBIAN"
-	mkdir -p "$pdir/usr/share/doc/$pname"
-	cp debian/copyright "$pdir/usr/share/doc/$pname/"
-	cp debian/changelog "$pdir/usr/share/doc/$pname/changelog.Debian"
-	gzip -n -9 "$pdir/usr/share/doc/$pname/changelog.Debian"
+	if [ "$pname" = "linux-image-domu" ]; then
+		mkdir -p "$pdir/$boot_xt_domu/usr/share/doc/$pname"
+		cp debian/copyright "$pdir/$boot_xt_domu/usr/share/doc/$pname/"
+		cp debian/changelog "$pdir/$boot_xt_domu/usr/share/doc/$pname/changelog.Debian"
+		gzip -n -9 "$pdir/$boot_xt_domu/usr/share/doc/$pname/changelog.Debian"
+	else
+		mkdir -p "$pdir/usr/share/doc/$pname"
+		cp debian/copyright "$pdir/usr/share/doc/$pname/"
+		cp debian/changelog "$pdir/usr/share/doc/$pname/changelog.Debian"
+		gzip -n -9 "$pdir/usr/share/doc/$pname/changelog.Debian"
+	fi
 	sh -c "cd '$pdir'; find . -type f ! -path './DEBIAN/*' -printf '%P\0' \
 		| xargs -r0 md5sum > DEBIAN/md5sums"
 
@@ -107,14 +134,19 @@ deploy_libc_headers () {
 }
 
 version=$KERNELRELEASE
-tmpdir=debian/linux-image
-mod_dir=debian/linux-modules
-dbg_dir=debian/linux-image-dbg
-packagename=linux-image-$version
+deb_package_type="domu"
+if [ "$KDEB_BUILD_DOM" != "$deb_package_type" ]; then
+	deb_package_type=$ARCH
+fi
+
+tmpdir=debian/linux-image-$deb_package_type
+mod_dir=debian/linux-modules-$deb_package_type
+dbg_dir=debian/linux-image-dbg-$deb_package_type
+packagename=linux-image-$deb_package_type
 dbg_packagename=$packagename-dbg
 
 if [ "$ARCH" = "um" ] ; then
-	packagename=user-mode-linux-$version
+	packagename=user-mode-linux-$KDEB_BUILD_DOM
 fi
 
 # Not all arches have the same installed path in debian
@@ -122,13 +154,13 @@ fi
 # path instead
 case $ARCH in
 um)
-	installed_image_path="usr/bin/linux-$version"
+	installed_image_path="$boot_xt_domu/usr/bin/linux-$version"
 	;;
 parisc|mips|powerpc)
-	installed_image_path="boot/vmlinux-$version"
+	installed_image_path="$boot_xt_domu/vmlinux-$version"
 	;;
 *)
-	installed_image_path="boot/vmlinuz-$version"
+	installed_image_path="$boot_xt_domu/vmlinuz-$version"
 esac
 
 BUILD_DEBUG=$(if_enabled_echo CONFIG_DEBUG_INFO Yes)
@@ -136,24 +168,24 @@ BUILD_DEBUG=$(if_enabled_echo CONFIG_DEBUG_INFO Yes)
 # Setup the directory structure
 rm -rf "$tmpdir" "$mod_dir" "$dbg_dir" debian/files
 mkdir -m 755 -p "$tmpdir/DEBIAN"
-mkdir -p "$tmpdir/lib" "$tmpdir/boot"
+mkdir -p "$tmpdir/lib" "$tmpdir/$boot_xt_domu"
 
 # Install the kernel
 if [ "$ARCH" = "um" ] ; then
-	mkdir -p "$tmpdir/usr/lib/uml/modules/$version" "$tmpdir/usr/bin" "$tmpdir/usr/share/doc/$packagename"
-	cp System.map "$tmpdir/usr/lib/uml/modules/$version/System.map"
-	cp $KCONFIG_CONFIG "$tmpdir/usr/share/doc/$packagename/config"
-	gzip "$tmpdir/usr/share/doc/$packagename/config"
+	mkdir -p "$tmpdir/$boot_xt_domu/usr/lib/uml/modules/$version" "$tmpdir/usr/bin" "$tmpdir/usr/share/doc/$packagename"
+	cp System.map "$tmpdir/$boot_xt_domu/usr/lib/uml/modules/$version/System.map"
+	cp $KCONFIG_CONFIG "$tmpdir/$boot_xt_domu/usr/share/doc/$packagename/config"
+	gzip "$tmpdir/$boot_xt_domu/usr/share/doc/$packagename/config"
 else
-	cp System.map "$tmpdir/boot/System.map-$version"
-	cp $KCONFIG_CONFIG "$tmpdir/boot/config-$version"
+	cp System.map "$tmpdir/$boot_xt_domu/System.map-$version"
+	cp $KCONFIG_CONFIG "$tmpdir/$boot_xt_domu/config-$version"
 fi
 cp "$($MAKE -s -f $srctree/Makefile image_name)" "$tmpdir/$installed_image_path"
 
 if is_enabled CONFIG_OF_EARLY_FLATTREE; then
 	# Only some architectures with OF support have this target
 	if [ -d "${srctree}/arch/$SRCARCH/boot/dts" ]; then
-		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/boot/dtbs" dtbs_install
+		$MAKE -f $srctree/Makefile INSTALL_DTBS_PATH="$tmpdir/$boot_xt_domu/dtbs" dtbs_install
 	fi
 fi
 
@@ -189,7 +221,13 @@ fi
 # kernel packages, as well as kernel packages built using make-kpkg.
 # make-kpkg sets $INITRD to indicate whether an initramfs is wanted, and
 # so do we; recent versions of dracut and initramfs-tools will obey this.
-debhookdir=${KDEB_HOOKDIR:-/etc/kernel}
+
+if [ "$packagename" = "linux-image-domu" ]; then
+	debhookdir=${KDEB_HOOKDIR:-/$boot_xt_domu/etc/kernel}
+else
+	debhookdir=${KDEB_HOOKDIR:-/etc/kernel}
+fi
+
 for script in postinst postrm preinst prerm ; do
 	mkdir -p "$tmpdir$debhookdir/$script.d"
 	cat <<EOF > "$tmpdir/DEBIAN/$script"
@@ -212,7 +250,7 @@ done
 if [ "$ARCH" != "um" ]; then
 	if is_enabled CONFIG_MODULES; then
 		deploy_kernel_headers debian/linux-headers
-		create_package linux-headers-$version debian/linux-headers
+		create_package linux-headers debian/linux-headers
 	fi
 
 	deploy_libc_headers debian/linux-libc-dev
@@ -221,7 +259,7 @@ fi
 
 create_package "$packagename" "$tmpdir"
 
-create_package linux-modules-$version "$mod_dir"
+create_package linux-modules-$deb_package_type "$mod_dir"
 
 if [ -n "$BUILD_DEBUG" ] ; then
 	# Build debug package

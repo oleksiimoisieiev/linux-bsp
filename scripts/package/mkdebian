@@ -169,6 +169,11 @@ License version 2 can be found in \`/usr/share/common-licenses/GPL-2'.
 EOF
 
 # Generate a control file
+deb_package_type="domu"
+if [ "$KDEB_BUILD_DOM" != "$deb_package_type" ]; then
+	deb_package_type=$ARCH
+fi
+
 cat <<EOF > debian/control
 Source: $sourcename
 Section: kernel
@@ -178,13 +183,13 @@ Rules-Requires-Root: no
 Build-Depends: bc, rsync, kmod, cpio, bison, flex | flex:native $extra_build_depends
 Homepage: https://www.kernel.org/
 
-Package: $packagename-$version
+Package: $packagename-$deb_package_type
 Architecture: $debarch
 Description: Linux kernel, version $version
  This package contains the Linux kernel and corresponding other
  files, version: $version.
 
-Package: linux-modules-$version
+Package: linux-modules-$deb_package_type
 Architecture: $debarch
 Description: Linux modules, version $version
  This package contains the Linux modules files, version: $version.
@@ -202,7 +207,7 @@ EOF
 if is_enabled CONFIG_MODULES; then
 cat <<EOF >> debian/control
 
-Package: linux-headers-$version
+Package: linux-headers
 Architecture: $debarch
 Description: Linux kernel headers for $version on $debarch
  This package provides kernel header files for $version on $debarch
@@ -214,7 +219,7 @@ fi
 if is_enabled CONFIG_DEBUG_INFO; then
 cat <<EOF >> debian/control
 
-Package: linux-image-$version-dbg
+Package: linux-image-$deb_package_type-dbg
 Section: debug
 Architecture: $debarch
 Description: Linux kernel debugging symbols for $version
