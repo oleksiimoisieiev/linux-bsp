@@ -534,6 +534,22 @@
 			iommus = <&ipmmu_pv3 1>;
 		};
 
+		gsx_pv0_dom0 {
+			iommus = <&ipmmu_pv0 0>;
+		};
+
+		gsx_pv1_dom0 {
+			iommus = <&ipmmu_pv1 0>;
+		};
+
+		gsx_pv2_dom0 {
+			iommus = <&ipmmu_pv2 0>;
+		};
+
+		gsx_pv3_dom0 {
+			iommus = <&ipmmu_pv3 0>;
+		};
+
 		fcpcs_vc0 {
 			xen,passthrough;
 			iommus = <&ipmmu_vc0 8>,

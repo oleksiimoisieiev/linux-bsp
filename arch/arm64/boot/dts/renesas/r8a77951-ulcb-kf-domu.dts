@@ -490,7 +490,6 @@
 	/delete-property/clocks;
 	/delete-property/resets;
 	/delete-property/power-domains;
-	status = "disabled";
 };
 &hdmi0 /* hdmi@fead0000*/
 {
