@@ -20,5 +20,6 @@
 
 &avb {
 	/delete-property/xen,passthrough;
-	/delete-property/compatible;
+	compatible = "renesas,etheravb-r8a7795",
+		  "renesas,etheravb-rcar-gen3";
 };
