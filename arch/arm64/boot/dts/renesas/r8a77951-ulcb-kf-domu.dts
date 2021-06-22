@@ -407,19 +407,25 @@
 &fcpcs /* vcp4@fe90f000*/
 {
 	/delete-property/clocks;
+	/delete-property/clock-names;
 	/delete-property/resets;
+	/delete-property/reset-names;
 	/delete-property/power-domains;
 };
 &fdp0 /* fdpm@fe940000*/
 {
 	/delete-property/clocks;
+	/delete-property/clock-names;
 	/delete-property/resets;
+	/delete-property/reset-names;
 	/delete-property/power-domains;
 };
 &fdp1 /* fdpm@fe944000*/
 {
 	/delete-property/clocks;
+	/delete-property/clock-names;
 	/delete-property/resets;
+	/delete-property/reset-names;
 	/delete-property/power-domains;
 };
 &gpio0 /* gpio@e6050000*/
@@ -440,6 +446,7 @@
 {
 	/delete-property/clocks;
 	/delete-property/resets;
+	/delete-property/clock-names;
 	/delete-property/power-domains;
 	status = "disabled";
 };
@@ -749,12 +756,6 @@
 	/delete-property/resets;
 	/delete-property/power-domains;
 };
-&fcpcs	/* vcp4@fe90f000*/
-{
-	/delete-property/clocks;
-	/delete-property/resets;
-	/delete-property/power-domains;
-};
 &vcplf /* vcp4@fe910000*/
 {
 	/delete-property/clocks;
@@ -827,30 +828,34 @@
 &vspbc /* vspm@fe920000*/
 {
 	/delete-property/clocks;
+	/delete-property/clock-names;
 	/delete-property/resets;
+	/delete-property/reset-names;
 	/delete-property/power-domains;
-	status = "disabled";
 };
 &vspbd /* vspm@fe960000*/
 {
 	/delete-property/clocks;
+	/delete-property/clock-names;
 	/delete-property/resets;
+	/delete-property/reset-names;
 	/delete-property/power-domains;
-	status = "disabled";
 };
 &vspi0 /* vspm@fe9a0000*/
 {
 	/delete-property/clocks;
+	/delete-property/clock-names;
 	/delete-property/resets;
+	/delete-property/reset-names;
 	/delete-property/power-domains;
-	status = "disabled";
 };
 &vspi1 /* vspm@fe9b0000*/
 {
 	/delete-property/clocks;
+	/delete-property/clock-names;
 	/delete-property/resets;
+	/delete-property/reset-names;
 	/delete-property/power-domains;
-	status = "disabled";
 };
 &rwdt /* watchdog@e6020000*/
 {
