@@ -100,6 +100,9 @@
 		/delete-property/power-domains;
 	};
 
+	hdmi-out {
+		status = "disabled";
+	};
 };
 
 &soc {
