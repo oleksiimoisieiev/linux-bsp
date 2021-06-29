@@ -14,7 +14,7 @@
 
 / {
 	chosen {
-		xen,dom0-bootargs = "console=hvc0 earlycon ignore_loglevel clk_ignore_unused root=/dev/nfs rw nfsroot=192.168.0.100:/nfs/dom0,nfsvers=3,rw ip=dhcp apparmor=0 fsck.mode=skip";
+		xen,dom0-bootargs = "console=hvc0 earlycon ignore_loglevel clk_ignore_unused root=/dev/nfs rw nfsroot=192.168.0.100:/nfs/dom0,nfsvers=3,rw ip=dhcp apparmor=0 fsck.mode=skip pvrsrvkm.DriverMode=0 cma=256M";
 	};
 };
 
