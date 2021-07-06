@@ -424,6 +424,15 @@ static int rcar_gen3_phy_usb2_init(struct phy *p)
 			return ret;
 		}
 	}
+	/*
+	 * Set initial value to USB2_INT_ENABLE register for each phy.
+	 * When booting from cold state - the initial value is 0(all disabled). In case if
+	 * warm reboot took place (virtual domain was restarted without HW reset),
+	 * there could be configured interrupts from EHCI/OHCI devices. Leaving enabled
+	 * interrupts in this stage can cause an issue when we receive interrupts from unitialized
+	 * device. Such interrupt storm produces "Nobody cared" error and disables interrupt.
+	 */
+	writel(0, channel->base + USB2_INT_ENABLE);
 
 	/* Initialize USB2 part */
 	val = readl(usb2_base + USB2_INT_ENABLE);
