@@ -704,6 +704,7 @@
 };
 //&tsc /* thermal@e6198000*/						{ xen,passthrough; };
 &usb2_phy0 /* usb-phy@ee080200*/					{ xen,passthrough; };
+&usb2_phy1 /* usb-phy@ee0a0200*/					{ xen,passthrough; };
 &hsusb /* usb@e6590000*/							{ xen,passthrough; };
 &xhci0 /* usb@ee000000*/							{ xen,passthrough; };
 &ohci0 /* usb@ee080000*/							{ xen,passthrough; };
