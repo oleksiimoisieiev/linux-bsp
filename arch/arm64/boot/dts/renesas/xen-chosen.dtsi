@@ -20,7 +20,7 @@
 
 		module@0 {
 			compatible = "xen,linux-zimage\0xen,multiboot-module";
-			reg = <0x05 0x1000000 0x0 0x2000000>;
+			reg = <0x05 0x400000 0x0 0x3000000>;
 		};
 	};
 
