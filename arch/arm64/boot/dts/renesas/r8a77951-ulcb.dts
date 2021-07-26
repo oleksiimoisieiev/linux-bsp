@@ -9,6 +9,7 @@
 /dts-v1/;
 #include "r8a77951.dtsi"
 #include "ulcb.dtsi"
+#include "r8a77951-scmi.dtsi"
 
 / {
 	model = "Renesas H3ULCB board based on r8a77951";

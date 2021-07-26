@@ -1,0 +1,238 @@
+/*
+ * Device Tree scmi configuration.
+ *
+ * Copyright (C) 2021 EPAM Systems.
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+/ {
+	cpu_scp_shm: scp-shmem@0x53FF0000 {
+		compatible = "arm,scmi-shmem";
+		reg = <0x0 0x53FF0000 0x0 0x1000>;
+	};
+
+	firmware {
+		scmi {
+			compatible = "arm,scmi-smc";
+			arm,smc-id = <0x82000002>;
+			shmem = <&cpu_scp_shm>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			scmi_power: protocol@11 {
+				reg = <0x11>;
+				#power-domain-cells = <1>;
+			};
+
+			scmi_clock: protocol@14 {
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+
+			scmi_reset: protocol@16 {
+				reg = <0x16>;
+				#reset-cells = <1>;
+			};
+		};
+	};
+
+	reserved-memory {
+		/* reserved region for scmi channels*/
+		scmi_memory: linux,scmi_mem@53FF0000 {
+			no-map;
+			reg = <0x0 0x53FF0000 0x0 0x10000>;
+		};
+	};
+};
+
+&soc {
+	i2c2_clk: i2c2_clk {
+		compatible = "fixed-clock";
+		/*
+		The value "133333328" was taken from /sys/kernel/debug/clk/clk_summary
+		for the corresponding clock in DomD.
+		*/
+		clock-frequency = <133333328>;
+		#clock-cells = <0>;
+	};
+};
+
+&avb {
+	scmi_devid = <0>;
+	clocks = <&scmi_clock 0>;
+	power-domains = <&scmi_power 0>;
+	resets = <&scmi_reset 0>;
+};
+
+&hdmi0 {
+	scmi_devid = <1>;
+	resets = <&scmi_reset 1>;
+};
+
+&i2c4 {
+	scmi_devid = <7>;
+	resets = <&scmi_reset 7>;
+};
+
+&i2c2 /* i2c@e6510000*/
+{
+	scmi_devid = <5>;
+	resets = <&scmi_reset 5>;
+};
+
+&usb_dmac2 /* dma-controller@e6460000*/
+{
+	scmi_devid = <15>;
+	clocks = <&scmi_clock 7>;
+	resets = <&scmi_reset 14>;
+	power-domains = <&scmi_power 0>;
+};
+
+&usb_dmac3 /* dma-controller@e6470000*/
+{
+	scmi_devid = <16>;
+	clocks = <&scmi_clock 8>;
+	resets = <&scmi_reset 15>;
+	power-domains = <&scmi_power 0>;
+};
+
+&usb_dmac0 /* dma-controller@e65a0000*/
+{
+	scmi_devid = <13>;
+	clocks = <&scmi_clock 5>;
+	resets = <&scmi_reset 12>;
+	power-domains = <&scmi_power 0>;
+};
+
+&usb_dmac1 /* dma-controller@e65b0000*/
+{
+	scmi_devid = <14>;
+	clocks = <&scmi_clock 6>;
+	resets = <&scmi_reset 13>;
+	power-domains = <&scmi_power 0>;
+};
+
+&hsusb /* usb@e6590000*/
+{
+	scmi_devid = <19>;
+	clocks = <&scmi_clock 3>, <&scmi_clock 2>;
+	resets = <&scmi_reset 10>, <&scmi_reset 9>;
+	power-domains = <&scmi_power 0>;
+};
+
+&xhci0 /* usb@ee000000*/
+{
+	scmi_devid = <8>;
+	clocks = <&scmi_clock 1>;
+	resets = <&scmi_reset 8>;
+	power-domains = <&scmi_power 0>;
+};
+
+&ohci0 /* usb@ee080000*/
+{
+	scmi_devid = <9>;
+	clocks = <&scmi_clock 2>, <&scmi_clock 3>;
+	resets = <&scmi_reset 9>, <&scmi_reset 10>;
+	power-domains = <&scmi_power 0>;
+};
+
+&ehci0 /* usb@ee080100*/
+{
+	scmi_devid = <10>;
+	clocks = <&scmi_clock 2>, <&scmi_clock 3>;
+	resets = <&scmi_reset 9>, <&scmi_reset 10>;
+	power-domains = <&scmi_power 0>;
+};
+
+&ohci1 /* usb@ee0a0000*/
+{
+	scmi_devid = <11>;
+	clocks = <&scmi_clock 4>;
+	resets = <&scmi_reset 11>;
+	power-domains = <&scmi_power 0>;
+};
+
+&ehci1 /* usb@ee0a0100*/
+{
+	scmi_devid = <12>;
+	clocks = <&scmi_clock 4>;
+	resets = <&scmi_reset 11>;
+	power-domains = <&scmi_power 0>;
+};
+
+&audma0 /* dma-controller@ec700000*/
+{
+	scmi_devid = <21>;
+	clocks = <&scmi_clock 36>;
+	resets = <&scmi_reset 28>;
+	power-domains = <&scmi_power 0>;
+};
+
+&audma1 /* dma-controller@ec720000*/
+{
+	scmi_devid = <22>;
+	clocks = <&scmi_clock 35>;
+	resets = <&scmi_reset 27>;
+	power-domains = <&scmi_power 0>;
+};
+
+&rcar_sound /* sound@ec500000*/
+{
+	scmi_devid = <20>;
+
+	resets = <&scmi_reset 16>,
+		 <&scmi_reset 17>, <&scmi_reset 18>,
+		 <&scmi_reset 19>, <&scmi_reset 20>,
+		 <&scmi_reset 21>, <&scmi_reset 22>,
+		 <&scmi_reset 23>, <&scmi_reset 24>,
+		 <&scmi_reset 25>, <&scmi_reset 26>;
+
+	clocks =
+			 /* "ssi-all" */
+			 <&scmi_clock 9>,
+			 /* "ssi.9", "ssi.8" */
+			 <&scmi_clock 10>, <&scmi_clock 11>,
+			 /* "ssi.7", "ssi.6" */
+			 <&scmi_clock 12>, <&scmi_clock 13>,
+			 /* "ssi.5", "ssi.4" */
+			 <&scmi_clock 14>, <&scmi_clock 15>,
+			 /* "ssi.3", "ssi.2" */
+			 <&scmi_clock 16>, <&scmi_clock 17>,
+			 /* "ssi.1", "ssi.0" */
+			 <&scmi_clock 18>, <&scmi_clock 19>,
+			 /* "src.9", "src.8" */
+			 <&scmi_clock 25>, <&scmi_clock 26>,
+			 /* "src.7", "src.6" */
+			 <&scmi_clock 27>, <&scmi_clock 28>,
+			 /* "src.5", "src.4" */
+			 <&scmi_clock 29>, <&scmi_clock 30>,
+			 /* "src.3", "src.2" */
+			 <&scmi_clock 31>, <&scmi_clock 32>,
+			 /* "src.1", "src.0" */
+			 <&scmi_clock 33>, <&scmi_clock 34>,
+			 /* "mix.1", "mix.0" */
+			 <&scmi_clock 23>, <&scmi_clock 24>,
+			 /* "ctu.1", "ctu.0" */
+			 <&scmi_clock 23>, <&scmi_clock 24>,
+			 /* "dvc.0", "dvc.1" */
+			 <&scmi_clock 22>, <&scmi_clock 21>,
+			 /* "clk_a", "clk_b" */
+			 <&audio_clk_a>, <&cs2000>,
+			 /* "clk_c", "clk_i" */
+			 <&audio_clk_c>, <&i2c2_clk>;
+
+		clock-names = "ssi-all",
+				  "ssi.9", "ssi.8", "ssi.7", "ssi.6",
+				  "ssi.5", "ssi.4", "ssi.3", "ssi.2",
+				  "ssi.1", "ssi.0",
+				  "src.9", "src.8", "src.7", "src.6",
+				  "src.5", "src.4", "src.3", "src.2",
+				  "src.1", "src.0",
+				  "mix.1", "mix.0",
+				  "ctu.1", "ctu.0",
+				  "dvc.0", "dvc.1",
+				  "clk_a", "clk_b", "clk_c", "clk_i";
+};
