@@ -1,0 +1,97 @@
+/*
+ * Device Tree scmi configuration.
+ *
+ * Copyright (C) 2021 EPAM Systems.
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+&scmi_pinctrl {
+	can0_pins: can0 {
+		groups = <28>; /* can0_data_a */
+		function = <2>; /* can0 */
+	};
+
+	can1_pins: can1 {
+		groups = <30>; /* can1_data */
+		function = <3>; /* can1 */
+	};
+
+	canfd0_pins: canfd0 {
+		groups = <32>; /* canfd0_data_a */
+		function = <5>; /* canfd0 */
+	};
+
+	canfd1_pins: canfd1 {
+		groups = <34>; /* canfd1_data */
+		function = <6>; /* canfd1 */
+	};
+
+	du_pins: du {
+		/* du_rgb888, du_sync, du_clk_out_0, du_disp */
+		groups = <36>, <39>, <37>, <42>;
+		function = <7>; /* du */
+	};
+
+	hscif0_pins: hscif0 {
+		/* hscif0_data, hscif0_ctrl */
+		groups = <43>, <45>;
+		function = <8>; /* hscif0 */
+	};
+
+	hscif1_pins: hscif1 {
+		/* hscif1_data_a, hscif1_ctrl_a */
+		groups = <46>, <48>;
+		function = <9>; /* hscif1 */
+	};
+
+	scif1_pins: scif1 {
+		groups = <208>; /* scif1_data_b */
+		function = <34>; /* scif1 */
+	};
+
+	sdhi3_pins: sdhi3 {
+		/* sdhi3_data4, sdhi3_ctrl */
+		groups = <251>, <253>;
+		function = <43>; /* sdhi3 */
+		power-source = <3300>;
+	};
+
+	sound_pcm_pins: sound-pcm {
+		/* ssi349_ctrl, ssi3_data, ssi4_data,
+			 ssi6_ctrl, ssi6_data,
+			 ssi78_ctrl, ssi7_data, ssi8_data */
+		groups = <268>, <267>, <269>,
+			   <274>, <273>,
+			   <276>, <275>, <277>;
+		function = <44>; /* ssi */
+	};
+
+	usb0_pins: usb0 {
+		groups = <290>; /* usb0 */
+		function = <47>; /* usb0 */
+	};
+
+	vin5_pins: vin5 {
+		/* vin5_data8, vin5_sync, vin5_clk */
+		groups = <253>, <319>, <322>;
+		function = <53>; /* vin5 */
+	};
+};
+
+&pfc {
+	/delete-node/can0;
+	/delete-node/can1;
+	/delete-node/canfd0;
+	/delete-node/canfd1;
+	/delete-node/du;
+	/delete-node/hscif0;
+	/delete-node/hscif1;
+	/delete-node/scif1;
+	/delete-node/sdhi3;
+	/delete-node/sound-pcm;
+	/delete-node/usb0;
+	/delete-node/vin5;
+};
