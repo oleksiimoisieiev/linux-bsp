@@ -438,7 +438,23 @@ static int pinctrl_scmi_func_set_mux(struct pinctrl_dev *pctldev,
 	return handle->pinctrl_ops->set_mux(handle, selector, group);
 }
 
+static int pinctrl_scmi_request(struct pinctrl_dev *pctldev, unsigned offset)
+{
+	const struct scmi_handle *handle = pmx->handle;
+
+	return handle->pinctrl_ops->request_pin(handle, offset);
+}
+
+static int pinctrl_scmi_free(struct pinctrl_dev *pctldev, unsigned offset)
+{
+	const struct scmi_handle *handle = pmx->handle;
+
+	return handle->pinctrl_ops->free_pin(handle, offset);
+}
+
 static const struct pinmux_ops pinctrl_scmi_pinmux_ops = {
+	.request	= pinctrl_scmi_request,
+	.free	= pinctrl_scmi_free,
 	.get_functions_count	= pinctrl_scmi_get_functions_count,
 	.get_function_name	= pinctrl_scmi_get_function_name,
 	.get_function_groups	= pinctrl_scmi_get_function_groups,

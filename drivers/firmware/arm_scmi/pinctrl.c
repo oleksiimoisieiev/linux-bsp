@@ -21,6 +21,8 @@ enum scmi_pinctrl_protocol_cmd {
 	SET_CONFIG = 0x8,
 	GET_CONFIG_GROUP = 0x9,
 	SET_CONFIG_GROUP = 0xa,
+	REQUEST_PIN = 0xb,
+	FREE_PIN = 0xc
 };
 
 struct scmi_group_info {
@@ -442,6 +444,40 @@ static int scmi_pinctrl_set_config_group(const struct scmi_handle *handle,
 	return ret;
 }
 
+static int scmi_pinctrl_request_pin(const struct scmi_handle *handle, u32 pin)
+{
+	struct scmi_xfer *t;
+	int ret;
+	__le32 *tx;
+
+	ret = scmi_xfer_get_init(handle, REQUEST_PIN, SCMI_PROTOCOL_PINCTRL,
+							 sizeof(pin), 0, &t);
+
+	tx = t->tx.buf;
+	*tx = cpu_to_le32(pin);
+	ret = scmi_do_xfer(handle, t);
+
+	scmi_xfer_put(handle, t);
+	return ret;
+}
+
+static int scmi_pinctrl_free_pin(const struct scmi_handle *handle, u32 pin)
+{
+	struct scmi_xfer *t;
+	int ret;
+	__le32 *tx;
+
+	ret = scmi_xfer_get_init(handle, FREE_PIN, SCMI_PROTOCOL_PINCTRL,
+							 sizeof(pin), 0, &t);
+
+	tx = t->tx.buf;
+	*tx = cpu_to_le32(pin);
+	ret = scmi_do_xfer(handle, t);
+
+	scmi_xfer_put(handle, t);
+	return ret;
+}
+
 static const struct scmi_pinctrl_ops pinctrl_ops = {
 	.get_groups_count = scmi_pinctrl_get_groups_count,
 	.get_group_name = scmi_pinctrl_get_group_name,
@@ -455,6 +491,8 @@ static const struct scmi_pinctrl_ops pinctrl_ops = {
 	.set_config = scmi_pinctrl_set_config,
 	.get_config_group = scmi_pinctrl_get_config_group,
 	.set_config_group = scmi_pinctrl_set_config_group,
+	.request_pin = scmi_pinctrl_request_pin,
+	.free_pin = scmi_pinctrl_free_pin
 };
 
 static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)

@@ -272,6 +272,8 @@ struct scmi_notify_ops {
 * @set_config: sets the configuration parameter for pin
 * @get_config_group: returns the configuration parameter for a group of pins
 * @set_config_group: sets the configuration parameter for a groups of pins
+* @request_pin: aquire pin before selecting mux setting
+* @free_pin: frees pin, aquired by request_pin call
 */
 struct scmi_pinctrl_ops {
 	int (*get_groups_count)(const struct scmi_handle *handle);
@@ -295,6 +297,8 @@ struct scmi_pinctrl_ops {
 					  u32 *config);
 	int (*set_config_group)(const struct scmi_handle *handle, u32 group,
 					  u32 config);
+	int (*request_pin)(const struct scmi_handle *handle, u32 pin);
+	int (*free_pin)(const struct scmi_handle *handle, u32 pin);
 };
 
 /**
