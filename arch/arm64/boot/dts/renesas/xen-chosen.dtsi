@@ -12,7 +12,7 @@
 / {
 	chosen {
 		stdout-path = "serial0:115200n8";
-		xen,xen-bootargs = "dom0_mem=800M console=dtuart dtuart=serial0 dom0_max_vcpus=4 bootscrub=0 loglvl=info sched_ratelimit_us=100 hmp-unsafe=true xsm=dummy";
+		xen,xen-bootargs = "dom0_mem=800M console=dtuart dtuart=serial0 dom0_max_vcpus=4 bootscrub=0 loglvl=info sched_ratelimit_us=100 hmp-unsafe=true xsm=dummy dom0_coprocs=/soc/gpio@e6055000;pins=0x800000,/soc/gpio@e6055400;pins=0x2000";
 		xen,dom0-bootargs = "console=hvc0 earlycon ignore_loglevel clk_ignore_unused root=/dev/mmcblk0p2 pvrsrvkm.DriverMode=0 cma=256M";
 
 		#address-cells = <0x02>;

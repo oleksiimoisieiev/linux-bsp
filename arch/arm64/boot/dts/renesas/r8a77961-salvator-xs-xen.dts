@@ -351,6 +351,18 @@
 			 <&ipmmu_rt 18>, <&ipmmu_rt 19>;
 };
 
+&gpio5			{ xen,coproc; };
+&gpio6			{ xen,coproc; };
+
+/ {
+		keys {
+			/delete-node/key-4;
+			/delete-node/key-3;
+			/delete-node/key-a;
+			/delete-node/key-c;
+		};
+};
+
 /* ============================ Xen pass through section =====================*/
 /*&adsp			{ xen,passthrough; };*/
 &arm_cc630p		{ xen,passthrough; };
