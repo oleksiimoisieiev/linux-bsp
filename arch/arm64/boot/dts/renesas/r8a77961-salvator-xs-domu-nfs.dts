@@ -1,0 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree Source for the Salvator-X 2nd version board with R-Car M3-W+
+ *
+ * Copyright (C) 2018 Renesas Electronics Corp.
+ */
+
+#include "r8a77961-salvator-xs-domu.dts"
+
+&avb /* ethernet@e6800000*/ { status = "disabled"; };

@@ -47,6 +47,10 @@ dtb-$(CONFIG_ARCH_R8A77960) += r8a77960-ulcb.dtb
 dtb-$(CONFIG_ARCH_R8A77960) += r8a77960-ulcb-kf.dtb
 
 dtb-$(CONFIG_ARCH_R8A77961) += r8a77961-salvator-xs.dtb
+dtb-$(CONFIG_ARCH_R8A77961) += r8a77961-salvator-xs-xen.dtb
+dtb-$(CONFIG_ARCH_R8A77961) += r8a77961-salvator-xs-xen-nfs.dtb
+dtb-$(CONFIG_ARCH_R8A77961) += r8a77961-salvator-xs-domu.dtb
+dtb-$(CONFIG_ARCH_R8A77961) += r8a77961-salvator-xs-domu-nfs.dtb
 dtb-$(CONFIG_ARCH_R8A77961) += r8a77961-ulcb.dtb
 
 dtb-$(CONFIG_ARCH_R8A77961) += r8a779m3-salvator-xs.dtb

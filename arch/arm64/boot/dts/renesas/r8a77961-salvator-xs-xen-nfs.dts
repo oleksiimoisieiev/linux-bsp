@@ -1,0 +1,25 @@
+/*
+ * Device Tree Source for the H3ULCB Kingfisher board
+ * running XEN hypervisor
+ *
+ * Copyright (C) 2016-2018 Renesas Electronics Corp.
+ * Copyright (C) 2016 Cogent Embedded, Inc.
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+#include "r8a77961-salvator-xs-xen.dts"
+
+/ {
+	chosen {
+		xen,dom0-bootargs = "console=hvc0 earlycon ignore_loglevel clk_ignore_unused root=/dev/nfs rw nfsroot=192.168.1.147:/home/amoiseev/nfs/dom0,nfsvers=3,rw ip=dhcp apparmor=0 fsck.mode=skip cma=256M";
+	};
+};
+
+&avb {
+	/delete-property/xen,passthrough;
+	compatible = "renesas,etheravb-r8a77961",
+		     "renesas,etheravb-rcar-gen3";
+};
