@@ -8,6 +8,7 @@
 /dts-v1/;
 #include "r8a77961.dtsi"
 #include "salvator-xs.dtsi"
+#include "r8a77961-scmi.dtsi"
 
 / {
 	model = "Renesas Salvator-X 2nd version board based on r8a77961";
