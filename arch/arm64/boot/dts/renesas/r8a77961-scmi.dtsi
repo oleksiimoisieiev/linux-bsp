@@ -60,7 +60,7 @@
 
 					pins_mii_tx {
 						/* PIN_AVB_TX_CTL, PIN_AVB_TXC, PIN_AVB_TD0,
-						       PIN_AVB_TD1, PIN_AVB_TD2, PIN_AVB_TD3 */
+						   PIN_AVB_TD1, PIN_AVB_TD2, PIN_AVB_TD3 */
 						pins = <242>, <240>, <236>, <237>, <238>, <239>;
 						drive-strength = <12>;
 					};
@@ -184,84 +184,93 @@
 		};
 	};
 
-	cpu_scp_shm: scp-shmem@0x53FF0000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF0000 0x0 0x1000>;
-	};
+	sram@0x53ff0000 {
+		compatible = "mmio-sram";
+		reg = <0x0 0x53ff0000 0x0 0x10000>;
 
-	scp-shmem@0x53FF1000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF1000 0x0 0x1000>;
-	};
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0x53ff0000 0x10000>;
 
-	scp-shmem@0x53FF2000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF2000 0x0 0x1000>;
-	};
+		cpu_scp_shm: scp-shmem@0x0 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x0 0x1000>;
+		};
 
-	scp-shmem@0x53FF3000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF3000 0x0 0x1000>;
-	};
+		scp-shmem@0x1000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x1000 0x1000>;
+		};
 
-	scp-shmem@0x53FF4000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF4000 0x0 0x1000>;
-	};
+		scp-shmem@0x2000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x2000 0x1000>;
+		};
 
-	scp-shmem@0x53FF5000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF5000 0x0 0x1000>;
-	};
+		scp-shmem@0x3000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x3000 0x1000>;
+		};
 
-	scp-shmem@0x53FF6000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF6000 0x0 0x1000>;
-	};
+		scp-shmem@0x4000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x4000 0x1000>;
+		};
 
-	scp-shmem@0x53FF7000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF7000 0x0 0x1000>;
-	};
+		scp-shmem@0x5000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x5000 0x1000>;
+		};
 
-	scp-shmem@0x53FF8000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF8000 0x0 0x1000>;
-	};
+		scp-shmem@0x6000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x6000 0x1000>;
+		};
 
-	scp-shmem@0x53FF9000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FF9000 0x0 0x1000>;
-	};
+		scp-shmem@0x7000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x7000 0x1000>;
+		};
 
-	scp-shmem@0x53FFA000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FFA000 0x0 0x1000>;
-	};
+		scp-shmem@0x8000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x8000 0x1000>;
+		};
 
-	scp-shmem@0x53FFB000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FFB000 0x0 0x1000>;
-	};
+		scp-shmem@0x9000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x9000 0x1000>;
+		};
 
-	scp-shmem@0x53FFC000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FFC000 0x0 0x1000>;
-	};
+		scp-shmem@0xA000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0xA000 0x1000>;
+		};
 
-	scp-shmem@0x53FFD000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FFD000 0x0 0x1000>;
-	};
+		scp-shmem@0xB000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0xB000 0x1000>;
+		};
 
-	scp-shmem@0x53FFE000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FFE000 0x0 0x1000>;
-	};
+		scp-shmem@0xC000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0xC000 0x1000>;
+		};
 
-	scp-shmem@0x53FFF000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x53FFF000 0x0 0x1000>;
+		scp-shmem@0xD000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0xD000 0x1000>;
+		};
+
+		scp-shmem@0xE000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0xE000 0x1000>;
+		};
+
+		scp-shmem@0xF000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0xF000 0x1000>;
+		};
 	};
 };
 
@@ -280,31 +289,31 @@
 };
 
 &avb {
-	scmi_devid = <0>;
+	arm,scmi-devid = <0>;
 	clocks = <&scmi_clock 0>;
 	power-domains = <&scmi_power 0>;
 	resets = <&scmi_reset 0>;
 };
 
 &hdmi0 {
-	scmi_devid = <1>;
+	arm,scmi-devid = <1>;
 	resets = <&scmi_reset 1>;
 };
 
 &i2c4 {
-	scmi_devid = <7>;
+	arm,scmi-devid = <7>;
 	resets = <&scmi_reset 7>;
 };
 
 &i2c2 /* i2c@e6510000*/
 {
-	scmi_devid = <5>;
+	arm,scmi-devid = <5>;
 	resets = <&scmi_reset 5>;
 };
 
 &usb_dmac0 /* dma-controller@e65a0000*/
 {
-	scmi_devid = <13>;
+	arm,scmi-devid = <13>;
 	clocks = <&scmi_clock 5>;
 	resets = <&scmi_reset 12>;
 	power-domains = <&scmi_power 0>;
@@ -312,7 +321,7 @@
 
 &usb_dmac1 /* dma-controller@e65b0000*/
 {
-	scmi_devid = <14>;
+	arm,scmi-devid = <14>;
 	clocks = <&scmi_clock 6>;
 	resets = <&scmi_reset 13>;
 	power-domains = <&scmi_power 0>;
@@ -320,7 +329,7 @@
 
 &hsusb /* usb@e6590000*/
 {
-	scmi_devid = <19>;
+	arm,scmi-devid = <19>;
 	clocks = <&scmi_clock 3>, <&scmi_clock 2>;
 	resets = <&scmi_reset 10>, <&scmi_reset 9>;
 	power-domains = <&scmi_power 0>;
@@ -328,7 +337,7 @@
 
 &xhci0 /* usb@ee000000*/
 {
-	scmi_devid = <8>;
+	arm,scmi-devid = <8>;
 	clocks = <&scmi_clock 1>;
 	resets = <&scmi_reset 8>;
 	power-domains = <&scmi_power 0>;
@@ -336,7 +345,7 @@
 
 &ohci0 /* usb@ee080000*/
 {
-	scmi_devid = <9>;
+	arm,scmi-devid = <9>;
 	clocks = <&scmi_clock 2>, <&scmi_clock 3>;
 	resets = <&scmi_reset 9>, <&scmi_reset 10>;
 	power-domains = <&scmi_power 0>;
@@ -344,7 +353,7 @@
 
 &ehci0 /* usb@ee080100*/
 {
-	scmi_devid = <10>;
+	arm,scmi-devid = <10>;
 	clocks = <&scmi_clock 2>, <&scmi_clock 3>;
 	resets = <&scmi_reset 9>, <&scmi_reset 10>;
 	power-domains = <&scmi_power 0>;
@@ -352,7 +361,7 @@
 
 &ohci1 /* usb@ee0a0000*/
 {
-	scmi_devid = <11>;
+	arm,scmi-devid = <11>;
 	clocks = <&scmi_clock 4>;
 	resets = <&scmi_reset 11>;
 	power-domains = <&scmi_power 0>;
@@ -360,7 +369,7 @@
 
 &ehci1 /* usb@ee0a0100*/
 {
-	scmi_devid = <12>;
+	arm,scmi-devid = <12>;
 	clocks = <&scmi_clock 4>;
 	resets = <&scmi_reset 11>;
 	power-domains = <&scmi_power 0>;
@@ -368,7 +377,7 @@
 
 &audma0 /* dma-controller@ec700000*/
 {
-	scmi_devid = <21>;
+	arm,scmi-devid = <21>;
 	clocks = <&scmi_clock 36>;
 	resets = <&scmi_reset 28>;
 	power-domains = <&scmi_power 0>;
@@ -376,7 +385,7 @@
 
 &audma1 /* dma-controller@ec720000*/
 {
-	scmi_devid = <22>;
+	arm,scmi-devid = <22>;
 	clocks = <&scmi_clock 35>;
 	resets = <&scmi_reset 27>;
 	power-domains = <&scmi_power 0>;
@@ -384,7 +393,7 @@
 
 &rcar_sound /* sound@ec500000*/
 {
-	scmi_devid = <20>;
+	arm,scmi-devid = <20>;
 
 	resets = <&scmi_reset 16>,
 		 <&scmi_reset 17>, <&scmi_reset 18>,
@@ -441,7 +450,7 @@
 };
 
 &pfc {
-	scmi_devid = <31>;
+	arm,scmi-devid = <31>;
 	/delete-node/i2c2;
 	/delete-node/irq0;
 	/delete-node/avb;
@@ -467,137 +476,137 @@
 };
 
 &gpio0 {
-	scmi_devid = <23>;
+	arm,scmi-devid = <23>;
 //	gpio-ranges = <&scmi_pinctrl 0 0 16>;
 };
 
 &gpio1 {
-	scmi_devid = <24>;
+	arm,scmi-devid = <24>;
 //			gpio-ranges = <&scmi_pinctrl 0 32 29>;
 };
 
 &gpio2 {
-	scmi_devid = <25>;
+	arm,scmi-devid = <25>;
 //			gpio-ranges = <&scmi_pinctrl 0 64 15>;
 };
 
 &gpio3 {
-	scmi_devid = <26>;
+	arm,scmi-devid = <26>;
 //			gpio-ranges = <&scmi_pinctrl 0 96 16>;
 };
 
 &gpio4 {
-	scmi_devid = <27>;
+	arm,scmi-devid = <27>;
 //			gpio-ranges = <&scmi_pinctrl 0 128 18>;
 };
 
 &gpio5 {
-	scmi_devid = <28>;
+	arm,scmi-devid = <28>;
 //			gpio-ranges = <&scmi_pinctrl 0 160 26>;
 };
 
 &gpio6 {
-	scmi_devid = <29>;
+	arm,scmi-devid = <29>;
 //			gpio-ranges = <&scmi_pinctrl 0 192 32>;
 };
 
 &gpio7 {
-	scmi_devid = <30>;
+	arm,scmi-devid = <30>;
 //			gpio-ranges = <&scmi_pinctrl 0 224 4>;
 };
 
 &can0 {
-	scmi_devid = <32>;
+	arm,scmi-devid = <32>;
 };
 
 &can1 {
-	scmi_devid = <33>;
+	arm,scmi-devid = <33>;
 };
 
 &canfd {
-	scmi_devid = <34>;
+	arm,scmi-devid = <34>;
 };
 
 &du {
-	scmi_devid = <39>;
+	arm,scmi-devid = <39>;
 };
 
 &hscif0 {
-	scmi_devid = <40>;
+	arm,scmi-devid = <40>;
 };
 
 &hscif1 {
-	scmi_devid = <41>;
+	arm,scmi-devid = <41>;
 };
 
 &hscif2 {
-	scmi_devid = <42>;
+	arm,scmi-devid = <42>;
 };
 
 &hscif3 {
-	scmi_devid = <43>;
+	arm,scmi-devid = <43>;
 };
 
 &hscif4 {
-	scmi_devid = <44>;
+	arm,scmi-devid = <44>;
 };
 
 &i2c_dvfs {
-	scmi_devid = <47>;
+	arm,scmi-devid = <47>;
 };
 
 &sdhi0 {
-	scmi_devid = <67>;
+	arm,scmi-devid = <67>;
 };
 
 &sdhi1 {
-	scmi_devid = <68>;
+	arm,scmi-devid = <68>;
 };
 
 &sdhi2 {
-	scmi_devid = <69>;
+	arm,scmi-devid = <69>;
 };
 
 &sdhi3 {
-	scmi_devid = <70>;
+	arm,scmi-devid = <70>;
 };
 
 &usb2_phy0 {
-	scmi_devid = <74>;
+	arm,scmi-devid = <74>;
 };
 
 &usb2_phy1 {
-	scmi_devid = <75>;
+	arm,scmi-devid = <75>;
 };
 
 &vin5 {
-	scmi_devid = <79>;
+	arm,scmi-devid = <79>;
 };
 
 &pwm0 {
-	scmi_devid = <53>;
+	arm,scmi-devid = <53>;
 };
 
 &pwm1 {
-	scmi_devid = <54>;
+	arm,scmi-devid = <54>;
 };
 
 &pwm2 {
-	scmi_devid = <55>;
+	arm,scmi-devid = <55>;
 };
 
 &pwm3 {
-	scmi_devid = <56>;
+	arm,scmi-devid = <56>;
 };
 
 &pwm4 {
-	scmi_devid = <57>;
+	arm,scmi-devid = <57>;
 };
 
 &pwm5 {
-	scmi_devid = <58>;
+	arm,scmi-devid = <58>;
 };
 
 &pwm6 {
-	scmi_devid = <59>;
+	arm,scmi-devid = <59>;
 };
