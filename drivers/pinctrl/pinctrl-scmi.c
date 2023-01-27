@@ -20,7 +20,7 @@
 #include "pinctrl-utils.h"
 #include "core.h"
 #include "pinconf.h"
-
+#define DEBUG
 #define DRV_NAME "scmi-pinctrl"
 #define DT_PROPERTY_NAME_BUF_MAX 32
 
