@@ -54,6 +54,8 @@ struct scmi_pinctrl_info {
 	u16 pins[SCMI_PINCTRL_MAX_PINS_CNT];
 };
 
+#define SET_TYPE(x) ((x) & 0x3)
+
 static int scmi_pinctrl_attributes_get(const struct scmi_handle *handle,
 				     struct scmi_pinctrl_info *pi)
 {
@@ -97,10 +99,9 @@ static int scmi_pinctrl_attributes(const struct scmi_handle *handle,
 								   u32 selector, char **name, u16 *n_elems)
 {
 	int ret = 0;
-	struct scmi_xfet *t;
+	struct scmi_xfer *t;
 	struct scmi_pinctrl_attributes_tx {
 		__le32 identifier;
-#define SET_TYPE(x) ((x) & 0x3)
 		__le32 flags;
 	} *tx;
 	struct scmi_pinctrl_attributes_rx {
@@ -127,7 +128,7 @@ static int scmi_pinctrl_attributes(const struct scmi_handle *handle,
    *n_elems = NUM_ELEMS(rx->attributes);
 
    if (!EXT_NAME_FLAG(rx->attributes))
-	   strlcpy(*name, attr->name, SCMI_NAX_STR_SIZE);
+	   strlcpy(*name, rx->name, SCMI_MAX_STR_SIZE);
 out:
 	scmi_xfer_put(handle, t);
 	return ret;
@@ -135,22 +136,24 @@ out:
 
 static int scmi_pinctrl_list_associations(const struct scmi_handle *handle, u32 selector,
 										  enum scmi_pinctrl_selector_type type,
-										  uit16_t size, uint16_t *array)
+										  uint16_t size, uint16_t *array)
 { //done not tested
+	struct scmi_xfer *t;
 	struct scmi_pinctrl_list_assoc_tx {
-		_le32 identifier;
-#define SET_TYPE(attr, x) (((attr) & 0xFFFFFFFC) | (x & 0x2))
-		_le32 flags;
-		_le32 index;
+		__le32 identifier;
+#define SET_LIST_TYPE(attr, x) (((attr) & 0xFFFFFFFC) | (x & 0x2))
+		__le32 flags;
+		__le32 index;
 	} *tx;
 	struct scmi_pinctrl_list_assoc_rx {
 #define REMAINING(x) ((x) >> 16)
 #define RETURNED(x) ((x) & 0xFFF)
-		_le32 flags;
+		__le32 flags;
 		__le16 array[];
 	} *rx;
 	u16 tot_num_ret = 0, loop_num_ret;
 	u16 remaining_num_ret;
+	int ret, loop;
 
 	ret = scmi_xfer_get_init(handle, PINCTRL_ATTRIBUTES,
 				 SCMI_PROTOCOL_PINCTRL, sizeof(*tx),
@@ -163,7 +166,7 @@ static int scmi_pinctrl_list_associations(const struct scmi_handle *handle, u32 
 
 	do {
 		tx->identifier = cpu_to_le32(selector);
-		tx->flags = SET_TYPE(tx->flags, cpu_to_le32(type));
+		tx->flags = SET_LIST_TYPE(tx->flags, cpu_to_le32(type));
 		tx->index = cpu_to_le32(tot_num_ret);
 
 		ret = scmi_do_xfer(handle, t);
@@ -179,7 +182,7 @@ static int scmi_pinctrl_list_associations(const struct scmi_handle *handle, u32 
 				goto out;
 			}
 
-			array[tot_num_ret + loop] = le16_to_cpu(rx->array[loop])
+			array[tot_num_ret + loop] = le16_to_cpu(rx->array[loop]);
 		}
 
 		tot_num_ret += loop_num_ret;
@@ -195,7 +198,7 @@ out:
 struct scmi_conf_tx {
 	__le32 identifier;
 #define SET_TYPE_BITS(attr, x) (((attr)&0xFFFFFCFF) | (x & 0x2) << 8)
-#define SET_CONFIG(attr, x) ((attr) & 0xFF) | (x * 0xFF))
+#define SET_CONFIG(attr, x) ((attr) & 0xFF) | (x * 0xFF)
 	__le32 attributes;
 };
 
@@ -236,7 +239,7 @@ static int scmi_pinctrl_set_config(const struct scmi_handle *handle, u32 pin,
 	int ret;
 	//TODO amoi we support only for pin right now
 
-	ret = scmi_xfer_get_init(handle, SET_CONFIG, SCMI_PROTOCOL_PINCTRL,
+	ret = scmi_xfer_get_init(handle, PINCTRL_CONFIG_SET, SCMI_PROTOCOL_PINCTRL,
 				 sizeof(*tx), 0, &t);
 	if (ret)
 		return ret;
@@ -252,18 +255,116 @@ static int scmi_pinctrl_set_config(const struct scmi_handle *handle, u32 pin,
 	return ret;
 }
 
-static int scmi_pinctrl_function_select(const struct scmi_handle *handle, u32 pin,
+static int scmi_pinctrl_function_select(const struct scmi_handle *handle, u32 identifier,
 				   enum scmi_pinctrl_selector_type type,
-				   u32 config)
-{
+				   u32 function_id)
+{ //done not tested
 	struct scmi_xfer *t;
 	struct scmi_func_set_tx {
 		__le32 identifier;
 		__le32 function_id;
 		__le32 flags;
 	} *tx;
+	int ret;
 
-	return 0;
+	ret = scmi_xfer_get_init(handle, PINCTRL_FUNCTION_SELECT, SCMI_PROTOCOL_PINCTRL,
+							 sizeof(*tx), 0, &t);
+	if (ret)
+		return ret;
+
+	tx = t->tx.buf;
+	tx->identifier = cpu_to_le32(identifier);
+	tx->function_id = cpu_to_le32(function_id);
+	tx->flags = SET_TYPE(cpu_to_le32(type));
+
+	ret = scmi_do_xfer(handle, t);
+	scmi_xfer_put(handle, t);
+
+	return ret;
+}
+
+static int scmi_pinctrl_request(const struct scmi_handle *handle, u32 identifier,
+									enum scmi_pinctrl_selector_type type,
+									u32 function_id)
+{
+	struct scmi_xfer *t;
+	int ret;
+	struct scmi_request_tx {
+		__le32 identifier;
+		__le32 function_id;
+		__le32 flags;
+	} *tx;
+
+	ret = scmi_xfer_get_init(handle, PINCTRL_REQUEST, SCMI_PROTOCOL_PINCTRL,
+				 sizeof(*tx), 0, &t);
+
+	tx = t->tx.buf;
+	tx->identifier = identifier;
+	tx->function_id = function_id;
+	tx->flags = SET_TYPE(cpu_to_le32(type));
+
+	ret = scmi_do_xfer(handle, t);
+	scmi_xfer_put(handle, t);
+
+	return ret;
+}
+
+static int scmi_pinctrl_free(const struct scmi_handle *handle, u32 identifier,
+							 enum scmi_pinctrl_selector_type type)
+{
+	struct scmi_xfer *t;
+	int ret;
+	struct scmi_request_tx {
+		__le32 identifier;
+		__le32 flags;
+	} *tx;
+
+	ret = scmi_xfer_get_init(handle, PINCTRL_RELEASE, SCMI_PROTOCOL_PINCTRL,
+				 sizeof(*tx), 0, &t);
+
+	tx = t->tx.buf;
+	tx->identifier = identifier;
+	tx->flags = SET_TYPE(cpu_to_le32(type));
+
+	ret = scmi_do_xfer(handle, t);
+	scmi_xfer_put(handle, t);
+
+	return ret;
+}
+
+static int scmi_pinctrl_get_name(const struct scmi_handle *handle, u32 identifier,
+			     enum scmi_pinctrl_selector_type type)
+{
+	struct scmi_xfer *t;
+	int ret;
+	struct scmi_name_tx {
+		__le32 identifier;
+		__le32 flags;
+	} *tx;
+	struct scmi_name_rx {
+		__le32 flags;
+		u8 name[64];
+	} *rx;
+
+	ret = scmi_xfer_get_init(handle, PINCTRL_NAME_GET, SCMI_PROTOCOL_PINCTRL,
+							 sizeof(*tx), sizeof(*rx), &t);
+
+	tx = t->tx.buf;
+	rx = t->rx.buf;
+	tx->identifier = identifier;
+	tx->flags = SET_TYPE(cpu_to_le32(type));
+
+	ret = scmi_do_xfer(handle, t);
+	if (ret)
+		goto out;
+
+	if (rx->flags) {
+
+	}
+ out:
+	scmi_xfer_put(handle, t);
+
+	return ret;
 }
 
 /////
@@ -593,40 +694,6 @@ static int scmi_pinctrl_set_config_group(const struct scmi_handle *handle,
 	tx = t->tx.buf;
 	tx->group = cpu_to_le32(group);
 	tx->config = cpu_to_le32(config);
-	ret = scmi_do_xfer(handle, t);
-
-	scmi_xfer_put(handle, t);
-	return ret;
-}
-
-static int scmi_pinctrl_request_pin(const struct scmi_handle *handle, u32 pin)
-{
-	struct scmi_xfer *t;
-	int ret;
-	__le32 *tx;
-
-	ret = scmi_xfer_get_init(handle, REQUEST_PIN, SCMI_PROTOCOL_PINCTRL,
-							 sizeof(pin), 0, &t);
-
-	tx = t->tx.buf;
-	*tx = cpu_to_le32(pin);
-	ret = scmi_do_xfer(handle, t);
-
-	scmi_xfer_put(handle, t);
-	return ret;
-}
-
-static int scmi_pinctrl_free_pin(const struct scmi_handle *handle, u32 pin)
-{
-	struct scmi_xfer *t;
-	int ret;
-	__le32 *tx;
-
-	ret = scmi_xfer_get_init(handle, FREE_PIN, SCMI_PROTOCOL_PINCTRL,
-							 sizeof(pin), 0, &t);
-
-	tx = t->tx.buf;
-	*tx = cpu_to_le32(pin);
 	ret = scmi_do_xfer(handle, t);
 
 	scmi_xfer_put(handle, t);
