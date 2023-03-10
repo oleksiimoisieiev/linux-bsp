@@ -12,7 +12,8 @@
 #include <linux/notifier.h>
 #include <linux/types.h>
 
-#define SCMI_MAX_STR_SIZE	16
+#define SCMI_MAX_STR_SIZE 16
+#define SCMI_MAX_STR_EXT_SIZE 64
 #define SCMI_MAX_NUM_RATES	16
 
 #define SCMI_PINCTRL_MAX_PINS_CNT 512
