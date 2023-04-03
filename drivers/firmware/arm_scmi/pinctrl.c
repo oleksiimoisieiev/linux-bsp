@@ -5,9 +5,11 @@
  * Copyright (C) 2021 EPAM.
  */
 
+#define DEBUG
 #define pr_fmt(fmt) "SCMI Notifications PINCTRL - " fmt
 
 #include <linux/scmi_protocol.h>
+#include <linux/slab.h>
 
 #include "common.h"
 #include "notify.h"
@@ -808,6 +810,256 @@ static const struct scmi_pinctrl_ops pinctrl_ops = {
 	/* .free_pin = scmi_pinctrl_free_pin */
 };
 
+
+
+
+
+
+
+#define tst_head(x)						\
+	do {							\
+		printk("********** %s START  *********\n", x);	\
+	} while (0);
+
+#define tst_chk(x, fmt, ...)						\
+	do {								\
+		if (!(x)) {						\
+			printk("*** %s %d " fmt "***\n", __func__, __LINE__, \
+			       __VA_ARGS__);				\
+			return -EINVAL;					\
+		} else {						\
+			printk("***** %s %d passed ****\n", __func__, __LINE__); \
+		} } while (0);
+
+static int test_pinctrl_attributes(struct scmi_handle *handle)
+{
+	int ret;
+	char *name;
+	u16 n_elems;
+	tst_head("scmi_pinctrl_attributes");
+
+	ret = scmi_pinctrl_attributes(handle, GROUP_TYPE, 1, NULL, &n_elems);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_attributes(handle, GROUP_TYPE, 1, NULL, NULL);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_attributes(handle, GROUP_TYPE, 0, &name, &n_elems);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s, nelems = %d\n", __LINE__, name, n_elems);
+	kfree(name);
+
+	ret = scmi_pinctrl_attributes(handle, GROUP_TYPE, 12, &name, &n_elems);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s, nelems = %d\n", __LINE__, name, n_elems);
+	kfree(name);
+
+	ret = scmi_pinctrl_attributes(handle, GROUP_TYPE, 999, &name, &n_elems);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_attributes(handle, PIN_TYPE, 0, &name, &n_elems);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s, nelems = %d\n", __LINE__, name, n_elems);
+	kfree(name);
+
+	ret = scmi_pinctrl_attributes(handle, PIN_TYPE, 1, &name, &n_elems);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s, nelems = %d\n", __LINE__, name, n_elems);
+	kfree(name);
+
+	ret = scmi_pinctrl_attributes(handle, PIN_TYPE, 12, &name, &n_elems);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s, nelems = %d\n", __LINE__, name, n_elems);
+	kfree(name);
+
+	ret = scmi_pinctrl_attributes(handle, PIN_TYPE, 999, &name, &n_elems);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_attributes(handle, FUNCTION_TYPE, 1, &name, &n_elems);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s, nelems = %d\n", __LINE__, name, n_elems);
+	kfree(name);
+
+	ret = scmi_pinctrl_attributes(handle, FUNCTION_TYPE, 12, &name, &n_elems);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s, nelems = %d\n", __LINE__, name, n_elems);
+	kfree(name);
+
+	ret = scmi_pinctrl_attributes(handle, FUNCTION_TYPE, 999, &name, &n_elems);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	return 0;
+}
+
+static void show_array(uint16_t *array, uint8_t size)
+{
+	int i;
+	for (i = 0; i < size; i++) {
+		printk("%d ", array[i]);
+	}
+	printk("\n");
+}
+
+static int test_pinctrl_list_assoc(struct scmi_handle *handle)
+{
+	int ret;
+	char *name;
+	u16 n_elems;
+	uint16_t array[512];
+
+	printk(" === %s %d\n", __func__, __LINE__);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	tst_head("scmi_pinctrl_list_associations");
+
+	ret = scmi_pinctrl_list_associations(handle, 1, GROUP_TYPE, 512, NULL);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_list_associations(handle, 1, GROUP_TYPE, 0, NULL);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_list_associations(handle, 1, GROUP_TYPE, 0, array);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_list_associations(handle, 1, PIN_TYPE, 0, array);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 0, GROUP_TYPE, 512, array);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_array(array, 10);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 12, GROUP_TYPE, 512, array);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_array(array, 10);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 999, GROUP_TYPE, 512, array);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 0, FUNCTION_TYPE, 512, array);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_array(array, 10);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 12, FUNCTION_TYPE, 512, array);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_array(array, 10);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 999, FUNCTION_TYPE, 512, array);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	return 0;
+}
+
+static int run_tests(struct scmi_handle *handle)
+{
+	int ret;
+	u32 version;
+	char* name;
+	struct scmi_pinctrl_info pi;
+	// scmi_pinctrl_attributes_get
+	tst_head("scmi_pinctrl_attributes_get");
+	ret = scmi_pinctrl_attributes_get(handle, &pi);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("pi->nr_functions = %d, nr->groups=%d nr->pins = %d\n",
+	       pi.nr_functions, pi.nr_groups, pi.nr_pins);
+	tst_chk(pi.nr_functions == 58, "Functions exp 58, got %d", pi.nr_functions);
+	tst_chk(pi.nr_groups == 353,"Groups exp 353, got %d", pi.nr_groups);
+	tst_chk(pi.nr_pins == 199,"Pins exp 199, got %d", pi.nr_pins);
+
+	ret = scmi_pinctrl_attributes_get(handle, NULL);
+	tst_chk(ret == -EINVAL, "Unexpected ret %d", ret);
+
+	tst_head("scmi_version_get");
+	scmi_version_get(handle, SCMI_PROTOCOL_PINCTRL, &version);
+	tst_chk(version == 0x10000, "Wrong version %x", version);
+
+	tst_head("scmi_pinctrl_get_name");
+	ret = scmi_pinctrl_get_name(handle, 1, PIN_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	tst_head("scmi_pinctrl_get_name");
+	ret = scmi_pinctrl_get_name(handle, 0, PIN_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 15, PIN_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 192, PIN_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 999, PIN_TYPE, &name);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_get_name(handle, 1, GROUP_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 15, GROUP_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 192, GROUP_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 999, GROUP_TYPE, &name);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_get_name(handle, 1, FUNCTION_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 0, FUNCTION_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 15, FUNCTION_TYPE, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("%d name = %s\n", __LINE__, name);
+	kfree(name);
+
+	ret = scmi_pinctrl_get_name(handle, 192, FUNCTION_TYPE, &name);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_get_name(handle, 1, 23, &name);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_get_name(handle, 1, PIN_TYPE, NULL);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = test_pinctrl_attributes(handle);
+	if (ret)
+		return ret;
+
+	ret = test_pinctrl_list_assoc(handle);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
+
+
+
+
 static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)
 {
 	u32 version;
@@ -865,7 +1117,17 @@ static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)
 	handle->pinctrl_ops = &pinctrl_ops;
 	handle->pinctrl_priv = pinfo;
 
-	return 0;
+	/********************/
+	ret = run_tests(handle);
+	if (ret) {
+		printk("TESTS FAILED!\n");
+		return -EINVAL;
+	}
+
+	printk("TESTS PASSED!\n");
+	return -EINVAL;
+	/*******************/
+	/* return 0; */
 free:
 	if (pinfo) {
 		if (pinfo->pins)
