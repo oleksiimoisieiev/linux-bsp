@@ -43,6 +43,7 @@ struct scmi_pinctrl {
 };
 
 static struct scmi_pinctrl *pmx;
+//TODO test
 
 static int pinctrl_scmi_get_groups_count(struct pinctrl_dev *pctldev)
 {
@@ -50,6 +51,7 @@ static int pinctrl_scmi_get_groups_count(struct pinctrl_dev *pctldev)
 
 	return handle->pinctrl_ops->get_groups_count(handle);
 }
+//TODO test
 
 static const char *pinctrl_scmi_get_group_name(struct pinctrl_dev *pctldev,
 					 unsigned selector)
@@ -66,6 +68,7 @@ static const char *pinctrl_scmi_get_group_name(struct pinctrl_dev *pctldev,
 
 	return name;
 }
+//TODO test
 
 static int pinctrl_scmi_get_group_pins(struct pinctrl_dev *pctldev,
 				unsigned selector, const unsigned **pins, unsigned *num_pins)
@@ -75,12 +78,14 @@ static int pinctrl_scmi_get_group_pins(struct pinctrl_dev *pctldev,
 	return handle->pinctrl_ops->get_group_pins(handle, selector,
 											   pins, num_pins);
 }
+//TODO test
 
 static void pinctrl_scmi_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
 				unsigned offset)
 {
 	seq_puts(s, DRV_NAME);
 }
+//TODO test
 
 static const char *int_to_str_alloc(unsigned int param)
 {
@@ -95,12 +100,14 @@ static const char *int_to_str_alloc(unsigned int param)
 	res = kmemdup(buf, size + 1, GFP_KERNEL);
 	return res;
 }
+//TODO test
 
 static void str_from_int_free(const char *addr)
 {
 	if (likely(addr))
 		kfree(addr);
-}
+}//TODO test
+
 
 #ifdef CONFIG_OF
 static void pinctrl_scmi_dt_free_map(struct pinctrl_dev *pctldev,
@@ -124,6 +131,7 @@ static void pinctrl_scmi_dt_free_map(struct pinctrl_dev *pctldev,
 
 	kfree(map);
 }
+//TODO test
 
 static int pinctrl_scmi_map_add_config(struct pinctrl_map *map,
 				 const char *group_or_pin,
@@ -145,6 +153,7 @@ static int pinctrl_scmi_map_add_config(struct pinctrl_map *map,
 
 	return 0;
 }
+//TODO test
 
 static int pinctrl_scmi_dt_subnode_to_map(struct pinctrl_dev *pctldev,
 				    struct device_node *np,
@@ -293,6 +302,7 @@ done:
 	kfree(configs);
 	return ret;
 }
+//TODO test
 
 static int pinctrl_scmi_dt_node_to_map(struct pinctrl_dev *pctldev,
 				 struct device_node *np,
@@ -348,6 +358,7 @@ static const struct pinctrl_ops pinctrl_scmi_pinctrl_ops = {
 	.dt_free_map = pinctrl_scmi_dt_free_map,
 #endif
 };
+//TODO test
 
 static int pinctrl_scmi_get_functions_count(struct pinctrl_dev *pctldev)
 {
@@ -355,6 +366,7 @@ static int pinctrl_scmi_get_functions_count(struct pinctrl_dev *pctldev)
 
 	return handle->pinctrl_ops->get_functions_count(handle);
 }
+//TODO test
 
 static const char *pinctrl_scmi_get_function_name(struct pinctrl_dev *pctldev,
 					    unsigned selector)
@@ -371,6 +383,7 @@ static const char *pinctrl_scmi_get_function_name(struct pinctrl_dev *pctldev,
 
 	return name;
 }
+//TODO test
 
 static int pinctrl_scmi_get_function_groups(struct pinctrl_dev *pctldev,
 				      unsigned selector,
@@ -429,6 +442,7 @@ error:
 
 	return ret;
 }
+//TODO test
 
 static int pinctrl_scmi_func_set_mux(struct pinctrl_dev *pctldev,
 				      unsigned selector, unsigned group)
@@ -437,6 +451,7 @@ static int pinctrl_scmi_func_set_mux(struct pinctrl_dev *pctldev,
 
 	return handle->pinctrl_ops->set_mux(handle, selector, group);
 }
+//TODO test
 
 static int pinctrl_scmi_request(struct pinctrl_dev *pctldev, unsigned offset)
 {
@@ -444,6 +459,7 @@ static int pinctrl_scmi_request(struct pinctrl_dev *pctldev, unsigned offset)
 
 	return handle->pinctrl_ops->request_pin(handle, offset);
 }
+//TODO test
 
 static int pinctrl_scmi_free(struct pinctrl_dev *pctldev, unsigned offset)
 {
@@ -451,6 +467,7 @@ static int pinctrl_scmi_free(struct pinctrl_dev *pctldev, unsigned offset)
 
 	return handle->pinctrl_ops->free_pin(handle, offset);
 }
+//TODO test
 
 static const struct pinmux_ops pinctrl_scmi_pinmux_ops = {
 	.request	= pinctrl_scmi_request,
@@ -460,6 +477,7 @@ static const struct pinmux_ops pinctrl_scmi_pinmux_ops = {
 	.get_function_groups	= pinctrl_scmi_get_function_groups,
 	.set_mux		= pinctrl_scmi_func_set_mux,
 };
+//TODO test
 
 static int pinctrl_scmi_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
 			      unsigned long *config)
@@ -468,6 +486,7 @@ static int pinctrl_scmi_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
 
 	return handle->pinctrl_ops->get_config(handle, _pin, (u32 *)config);
 }
+//TODO test
 
 static int pinctrl_scmi_pinconf_set(struct pinctrl_dev *pctldev, unsigned _pin,
 			      unsigned long *configs, unsigned num_configs)
@@ -487,7 +506,7 @@ static int pinctrl_scmi_pinconf_set(struct pinctrl_dev *pctldev, unsigned _pin,
 
 	return ret;
 }
-
+//TODO test
 static int pinctrl_scmi_pinconf_group_set(struct pinctrl_dev *pctldev,
 				    unsigned group,
 				    unsigned long *configs,
@@ -557,23 +576,28 @@ static const struct scmi_device_id scmi_id_table[] = {
 };
 MODULE_DEVICE_TABLE(scmi, scmi_id_table);
 
-/* #define TST_HEAD(x)                                                            \ */
-/* 	do {                                                                   \ */
-/* 		printk("!!!!!!!! %s START !!!!!!!\n", x);                      \ */
-/* 	} while (0); */
 
-/* #define TST_CHK(x, fmt, ...) \ */
-/* 	if (x) { printk("!!! %s %d" fmt "!!!\n", __func__, __LINE__,  __VA_ARGS__); return -EINVAL } } while (0); */
 
-/* static int run_tests(void) */
-/* { */
-/* 	int ret; */
-/* 	// scmi_pinctrl_attributes_get */
-/* 	TST_HEAD("scmi_pinctrl_attributes"); */
-/* 	ret =  */
-/* 	print */
 
-/* } */
+#define tst_head(x)						\
+	do {							\
+		printk("********** %s START  *********\n", x);	\
+	} while (0);
+
+#define tst_chk(x, fmt, ...)						\
+	do {								\
+		if (!(x)) {						\
+			printk("*** %s %d " fmt "***\n", __func__, __LINE__, \
+			       __VA_ARGS__);				\
+			return -EINVAL;					\
+		} else {						\
+			printk("***** %s %d passed ****\n", __func__, __LINE__); \
+		} } while (0);
+
+static int run_tests(struct scmi_handle *handle)
+{
+	return 0;
+}
 
 static int scmi_pinctrl_probe(struct scmi_device *sdev)
 {
@@ -596,14 +620,14 @@ static int scmi_pinctrl_probe(struct scmi_device *sdev)
 	pmx->pctl_desc.pmxops = &pinctrl_scmi_pinmux_ops;
 	pmx->pctl_desc.confops = &pinctrl_scmi_pinconf_ops;
 
-        /* ret = run_tests(); */
-	/* if (ret) { */
-	/* 	printk("TESTS FAILED!\n"); */
-	/* 	return -EINVAL; */
-	/* } */
+        ret = run_tests();
+	if (ret) {
+		printk("TESTS FAILED!\n");
+		return -EINVAL;
+	}
 
-	/* printk("TESTS PASSED!\n"); */
-	/* return 0; */
+	printk("TESTS PASSED!\n");
+	return 0;
 
 	ret = pinctrl_scmi_get_pins(pmx->handle, &pmx->pctl_desc.npins,
 								&pmx->pctl_desc.pins);
