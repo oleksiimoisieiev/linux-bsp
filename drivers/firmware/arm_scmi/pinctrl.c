@@ -945,6 +945,16 @@ static int test_pinctrl_list_assoc(struct scmi_handle *handle)
 	show_array(array, 10);
 
 	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 19, GROUP_TYPE, 512, array);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_array(array, 10);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 24, GROUP_TYPE, 512, array);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_array(array, 10);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
 	ret = scmi_pinctrl_list_associations(handle, 999, GROUP_TYPE, 512, array);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
 
@@ -955,6 +965,16 @@ static int test_pinctrl_list_assoc(struct scmi_handle *handle)
 
 	memset(array, 0, 512 * sizeof(uint16_t));
 	ret = scmi_pinctrl_list_associations(handle, 12, FUNCTION_TYPE, 512, array);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_array(array, 10);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 19, FUNCTION_TYPE, 512, array);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_array(array, 10);
+
+	memset(array, 0, 512 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 24, FUNCTION_TYPE, 512, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
