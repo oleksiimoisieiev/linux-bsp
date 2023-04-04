@@ -294,7 +294,8 @@ static int scmi_pinctrl_list_associations(const struct scmi_handle *handle,
 
 	tx = t->tx.buf;
 	rx = t->rx.buf;
-
+	printk(" === %s %d rxpt = %llx\n", __func__, __LINE__,
+	       (uint64_t)rx);
 	do {
 		tx->identifier = cpu_to_le32(selector);
 		tx->flags = SET_TYPE(cpu_to_le32(type));
@@ -306,12 +307,21 @@ static int scmi_pinctrl_list_associations(const struct scmi_handle *handle,
 
 		loop_num_ret = le32_to_cpu(RETURNED(rx->flags));
 		remaining_num_ret = le32_to_cpu(REMAINING(rx->flags));
+		printk(" === %s %d loop - %d\n", __func__, __LINE__,
+		       loop_num_ret);
+		printk(" === %s %d ret - %d\n", __func__, __LINE__,
+		       remaining_num_ret);
 
 		for (loop = 0; loop < loop_num_ret; loop++) {
 			if (tot_num_ret + loop >= size) {
 				ret = -EMSGSIZE;
 				goto out;
 			}
+			printk(" === %s %d loop = %d arr=%d arrpt = %llx\n", __func__, __LINE__,
+			       loop, le16_to_cpu(rx->array[loop]),
+			       (uint64_t)&rx->array[loop]);
+			printk(" === %s %d tot = %d\n", __func__, __LINE__,
+			       tot_num_ret);
 
 			array[tot_num_ret + loop] =
 				le16_to_cpu(rx->array[loop]);
