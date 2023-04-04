@@ -279,25 +279,23 @@ struct scmi_notify_ops {
 struct scmi_pinctrl_ops {
 	int (*get_groups_count)(const struct scmi_handle *handle);
 	int (*get_group_name)(const struct scmi_handle *handles, u32 selector,
-						  const char **name);
+			      const char **name);
 	int (*get_group_pins)(const struct scmi_handle *handle, u32 selector,
-						  const unsigned **pins, unsigned *nr_pins);
+			      const unsigned **pins, unsigned *nr_pins);
 	int (*get_functions_count)(const struct scmi_handle *handle);
 	int (*get_function_name)(const struct scmi_handle *handle, u32 selector,
-							 const char **name);
-	int (*get_function_groups)(const struct scmi_handle *handle, u32 selector,
-							   u32 *nr_groups, const u16 **groups);
-	int (*set_mux)(const struct scmi_handle *handle, u32 selector, u32 group);
+				 const char **name);
+	int (*get_function_groups)(const struct scmi_handle *handle,
+				   u32 selector, u32 *nr_groups,
+				   const u16 **groups);
+	int (*set_mux)(const struct scmi_handle *handle, u32 selector,
+		       u32 group);
 	int (*get_pins)(const struct scmi_handle *handle, u32 *nr_pins,
-					const u16 **pins);
+			const u16 **pins);
 	int (*get_config)(const struct scmi_handle *handle, u32 pin,
-					  u32 *config);
+			  u32 *config);
 	int (*set_config)(const struct scmi_handle *handle, u32 pin,
-					  u32 config);
-	int (*get_config_group)(const struct scmi_handle *handle, u32 group,
-					  u32 *config);
-	int (*set_config_group)(const struct scmi_handle *handle, u32 group,
-					  u32 config);
+			  u32 config);
 	int (*request_pin)(const struct scmi_handle *handle, u32 pin);
 	int (*free_pin)(const struct scmi_handle *handle, u32 pin);
 };
