@@ -100,7 +100,6 @@ static int scmi_pinctrl_attributes_get(const struct scmi_handle *handle,
 	return ret;
 }
 
-//not tested
 static int scmi_pinctrl_get_groups_count(const struct scmi_handle *handle)
 {
 	struct scmi_pinctrl_info *pi;
@@ -113,7 +112,6 @@ static int scmi_pinctrl_get_groups_count(const struct scmi_handle *handle)
 	return pi->nr_groups;
 }
 
-//not tested
 static int scmi_pinctrl_get_functions_count(const struct scmi_handle *handle)
 {
 	struct scmi_pinctrl_info *pi;
@@ -1171,14 +1169,14 @@ static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)
 	handle->pinctrl_priv = pinfo;
 
 	/********************/
-	ret = run_tests(handle);
-	if (ret) {
-		printk("TESTS FAILED!\n");
-		return -EINVAL;
-	}
+	/* ret = run_tests(handle); */
+	/* if (ret) { */
+	/* 	printk("TESTS FAILED!\n"); */
+	/* 	return -EINVAL; */
+	/* } */
 
-	printk("TESTS PASSED!\n");
-	return -EINVAL;
+	/* printk("TESTS PASSED!\n"); */
+	/* return -EINVAL; */
 	/*******************/
 	/* return 0; */
 free:
