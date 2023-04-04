@@ -296,6 +296,10 @@ struct scmi_pinctrl_ops {
 			  u32 *config);
 	int (*set_config)(const struct scmi_handle *handle, u32 pin,
 			  u32 config);
+	int (*get_config_group)(const struct scmi_handle *handle, u32 pin,
+			  u32 *config);
+	int (*set_config_group)(const struct scmi_handle *handle, u32 pin,
+			  u32 config);
 	int (*request_pin)(const struct scmi_handle *handle, u32 pin);
 	int (*free_pin)(const struct scmi_handle *handle, u32 pin);
 };
