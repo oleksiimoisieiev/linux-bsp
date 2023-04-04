@@ -904,7 +904,6 @@ static int test_pinctrl_list_assoc(struct scmi_handle *handle)
 {
 	int ret;
 	char *name;
-	u16 n_elems;
 	uint16_t array[512];
 
 	printk(" === %s %d\n", __func__, __LINE__);
@@ -972,6 +971,36 @@ static int test_pinctrl_list_assoc(struct scmi_handle *handle)
 	ret = scmi_pinctrl_list_associations(handle, 999, FUNCTION_TYPE, 512, array);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
 
+	return 0;
+}
+
+static int grp_fnc_cnt(struct scmi_handle *handle)
+{
+	struct scmi_handle handle2;
+	int ret;
+
+	memcpy(&handle2, handle, sizeof(handle2));
+	tst_head("scmi_pinctrl_get_groups_count");
+	ret = scmi_pinctrl_get_groups_count(handle);
+	tst_chk(ret == 353, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_get_groups_count(NULL);
+	tst_chk(ret == -19, "Unexpected ret %d", ret);
+
+	handle2.pinctrl_priv = NULL;
+	ret = scmi_pinctrl_get_groups_count(&handle2);
+	tst_chk(ret == -19, "Unexpected ret %d", ret);
+
+	tst_head("scmi_pinctrl_get_functions_count");
+	ret = scmi_pinctrl_get_functions_count(handle);
+	tst_chk(ret == 58, "Unexpected ret %d", ret);
+
+	ret = scmi_pinctrl_get_functions_count(NULL);
+	tst_chk(ret == -19, "Unexpected ret %d", ret);
+
+	handle2.pinctrl_priv = NULL;
+	ret = scmi_pinctrl_get_functions_count(&handle2);
+	tst_chk(ret == -19, "Unexpected ret %d", ret);
 	return 0;
 }
 
@@ -1070,6 +1099,10 @@ static int run_tests(struct scmi_handle *handle)
 		return ret;
 
 	ret = test_pinctrl_list_assoc(handle);
+	if (ret)
+		return ret;
+
+	ret = grp_fnc_cnt(handle);
 	if (ret)
 		return ret;
 
