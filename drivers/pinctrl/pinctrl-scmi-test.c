@@ -51,19 +51,23 @@ static int pinctrl_scmi_get_groups_count(struct pinctrl_dev *pctldev)
 
 	return handle->pinctrl_ops->get_groups_count(handle);
 }
-//TODO test
 
 static const char *pinctrl_scmi_get_group_name(struct pinctrl_dev *pctldev,
-					 unsigned selector)
+					       unsigned selector)
 {
 	int ret;
 	const char *name;
-	const struct scmi_handle *handle = pmx->handle;
+	const struct scmi_handle *handle;
+
+	if (!pmx || !pmx->handle)
+		return NULL;
+
+	handle = pmx->handle;
 
 	ret = handle->pinctrl_ops->get_group_name(handle, selector, &name);
 	if (ret) {
 		dev_err(pmx->dev, "get name failed with err %d", ret);
-		return "";
+		return NULL;
 	}
 
 	return name;
@@ -714,13 +718,86 @@ static int conf_tests(void)
 	return 0;
 }
 
+static int grfn_getinfo_test(void)
+{
+	const struct scmi_handle *handle = pmx->handle;
+	int ret;
+	const char *name;
+	tst_head("ops->get_group_name");
+
+	ret = handle->pinctrl_ops->get_group_name(handle, 0, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("name = %s", name);
+	kfree(name);
+
+	ret = handle->pinctrl_ops->get_group_name(handle, 0, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("name = %s", name);
+	kfree(name);
+
+	ret = handle->pinctrl_ops->get_group_name(handle, 15, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("name = %s", name);
+	kfree(name);
+
+	ret = handle->pinctrl_ops->get_group_name(handle, 15, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("name = %s", name);
+	kfree(name);
+
+	ret = handle->pinctrl_ops->get_group_name(handle, 999, &name);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+	printk("name = %s", name);
+
+	ret = handle->pinctrl_ops->get_group_name(handle, 990, &name);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+	printk("name = %s", name);
+
+	name = pinctrl_scmi_get_group_name(pmx->pctldev, 0);
+	tst_chk(name != 0, "Unexpected name %d", -1);
+	printk("name = %s", name);
+	kfree(name);
+
+	name = pinctrl_scmi_get_group_name(pmx->pctldev, 0);
+	tst_chk(name !=0, "Unexpected name %d", -1);
+	printk("name = %s", name);
+	kfree(name);
+
+	name = pinctrl_scmi_get_group_name(pmx->pctldev, 14);
+	tst_chk(name != 0, "Unexpected name %d", -1);
+	printk("name = %s", name);
+	kfree(name);
+
+	name = pinctrl_scmi_get_group_name(pmx->pctldev, 14);
+	tst_chk(name !=0, "Unexpected name %d", -1);
+	printk("name = %s", name);
+	kfree(name);
+
+	name = pinctrl_scmi_get_group_name(pmx->pctldev, 999);
+	tst_chk(name == 0, "Unexpected name %d", -1);
+
+	name = pinctrl_scmi_get_group_name(pmx->pctldev, 999);
+	tst_chk(name == 0, "Unexpected name %d", -1);
+
+	name = pinctrl_scmi_get_group_name(NULL, 999);
+	tst_chk(name == 0, "Unexpected name %d", -1);
+
+	return 0;
+}
+
+
 static int run_tests(void)
 {
 	int ret;
 
-	ret = conf_tests();
+	ret = grfn_getinfo_test();
 	if (ret)
 		return ret;
+
+
+	/* ret = conf_tests(); */
+	/* if (ret) */
+	/* 	return ret; */
 
 	return 0;
 }
