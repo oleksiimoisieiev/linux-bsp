@@ -464,25 +464,24 @@ static int scmi_pinctrl_function_select(const struct scmi_handle *handle,
 	return ret;
 }
 
-//not tested
 static int scmi_pinctrl_request(const struct scmi_handle *handle, u32 identifier,
-									enum scmi_pinctrl_selector_type type,
-									u32 function_id)
+				enum scmi_pinctrl_selector_type type)
 {
 	struct scmi_xfer *t;
 	int ret;
 	struct scmi_request_tx {
 		__le32 identifier;
-		__le32 function_id;
 		__le32 flags;
 	} *tx;
+
+	if (!handle || type == FUNCTION_TYPE)
+		return -EINVAL;
 
 	ret = scmi_xfer_get_init(handle, PINCTRL_REQUEST, SCMI_PROTOCOL_PINCTRL,
 				 sizeof(*tx), 0, &t);
 
 	tx = t->tx.buf;
 	tx->identifier = identifier;
-	tx->function_id = function_id;
 	tx->flags = SET_TYPE(cpu_to_le32(type));
 
 	ret = scmi_do_xfer(handle, t);
@@ -491,9 +490,13 @@ static int scmi_pinctrl_request(const struct scmi_handle *handle, u32 identifier
 	return ret;
 }
 
-//not tested
+static int scmi_pinctrl_request_pin(const struct scmi_handle *handle, u32 pin)
+{
+	return scmi_pinctrl_request(handle, pin, PIN_TYPE);
+}
+
 static int scmi_pinctrl_free(const struct scmi_handle *handle, u32 identifier,
-							 enum scmi_pinctrl_selector_type type)
+			     enum scmi_pinctrl_selector_type type)
 {
 	struct scmi_xfer *t;
 	int ret;
@@ -501,6 +504,9 @@ static int scmi_pinctrl_free(const struct scmi_handle *handle, u32 identifier,
 		__le32 identifier;
 		__le32 flags;
 	} *tx;
+
+	if (!handle)
+		return -EINVAL;
 
 	ret = scmi_xfer_get_init(handle, PINCTRL_RELEASE, SCMI_PROTOCOL_PINCTRL,
 				 sizeof(*tx), 0, &t);
@@ -514,6 +520,12 @@ static int scmi_pinctrl_free(const struct scmi_handle *handle, u32 identifier,
 
 	return ret;
 }
+
+static int scmi_pinctrl_free_pin(const struct scmi_handle *handle, u32 pin)
+{
+	return scmi_pinctrl_free(handle, pin, PIN_TYPE);
+}
+
 
 static int scmi_pinctrl_get_group_info(const struct scmi_handle *handle,
 				      u32 selector,
@@ -799,19 +811,19 @@ static int scmi_pinctrl_get_pins(const struct scmi_handle *handle, u32 *nr_pins,
 
 static const struct scmi_pinctrl_ops pinctrl_ops = {
 	.get_groups_count = scmi_pinctrl_get_groups_count,
-	.get_group_name = scmi_pinctrl_get_group_name, //TODO test
-	.get_group_pins = scmi_pinctrl_get_group_pins, //TODO test
+	.get_group_name = scmi_pinctrl_get_group_name,
+	.get_group_pins = scmi_pinctrl_get_group_pins,
 	.get_functions_count = scmi_pinctrl_get_functions_count,
-	.get_function_name = scmi_pinctrl_get_function_name, //TODO test
-	.get_function_groups = scmi_pinctrl_get_function_groups, //TODO test
+	.get_function_name = scmi_pinctrl_get_function_name,
+	.get_function_groups = scmi_pinctrl_get_function_groups,
 	.set_mux = scmi_pinctrl_set_mux,//TODO test
 	.get_pins = scmi_pinctrl_get_pins,//TODO test
 	.get_config = scmi_pinctrl_get_config,//TODO test
 	.set_config = scmi_pinctrl_set_config, //TODO test
 	.get_config_group = scmi_pinctrl_get_config_group,//TODO test
 	.set_config_group = scmi_pinctrl_set_config_group,//TODO test
-	/* .request_pin = scmi_pinctrl_request_pin, *///TODO test
-	/* .free_pin = scmi_pinctrl_free_pin *///TODO test
+	.request_pin = scmi_pinctrl_request_pin,
+	.free_pin = scmi_pinctrl_free_pin
 };
 
 
