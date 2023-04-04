@@ -40,12 +40,14 @@ struct scmi_group_info {
 	u16 *group_pins;
 	u16 nr_pins;
 };
-	//todo  remove SCMI_PINCTRL_MAX_PINS_CNG
+//todo  remove SCMI_PINCTRL_MAX_PINS_CNG
+//todo  remove [SCMI_PINCTRL_MAX_GROUPS_CNT];
+
 struct scmi_function_info {
-	bool has_name;
-	char name[SCMI_MAX_STR_SIZE];
-	u16 groups[SCMI_PINCTRL_MAX_GROUPS_CNT];
-	u8 nr_groups;
+	bool present;
+	char *name;
+	u16 *groups;
+	u16 nr_groups;
 };
 
 struct scmi_pinctrl_info {
@@ -532,7 +534,7 @@ static int scmi_pinctrl_get_group_info(const struct scmi_handle *handle,
 		return ret;
 
 	if (!group->nr_pins) {
-		dev_err(handle->dev, "Group %d has 0 elements",group->nr_pins);
+		dev_err(handle->dev, "Group %d has 0 elements", selector);
 		return -ENODATA;
 	}
 
@@ -565,12 +567,12 @@ static int scmi_pinctrl_get_group_name(const struct scmi_handle *handle,
 	int ret;
 	struct scmi_pinctrl_info *pi;
 
-	if (!handle || !handle->pinctrl_priv || !*name)
+	if (!handle || !handle->pinctrl_priv || !name)
 		return -EINVAL;
 
 	pi = handle->pinctrl_priv;
 
-	if (selector > SCMI_PINCTRL_MAX_GROUPS_CNT)
+	if (selector > pi->nr_groups)
 		return -EINVAL;
 
 	if (!pi->groups[selector].present) {
@@ -655,24 +657,77 @@ static int scmi_pinctrl_get_group_pins(const struct scmi_handle *handle,
 	return 0;
 }
 
-//todo test
-static int scmi_pinctrl_get_function_name(const struct scmi_handle *handle,
-								   u32 selector, const char **name)
+static int scmi_pinctrl_get_function_info(const struct scmi_handle *handle,
+					   u32 selector,
+					   struct scmi_function_info *func)
 {
-	struct scmi_pinctrl_info *pi = handle->pinctrl_priv;
+	int ret = 0;
+	struct scmi_pinctrl_info *pi;
 
-	if (selector >= pi->nr_functions)
+	if (!handle || !handle->pinctrl_priv || !func)
 		return -EINVAL;
 
-	if (!pi->functions[selector].has_name) {
-		snprintf(pi->functions[selector].name, SCMI_MAX_STR_SIZE,
-				 "%d", selector);
-		pi->functions[selector].has_name = true;
+	pi = handle->pinctrl_priv;
+
+	ret = scmi_pinctrl_attributes(handle, FUNCTION_TYPE, selector,
+				      &func->name,
+				      &func->nr_groups);
+	if (ret)
+		return ret;
+
+	if (!func->nr_groups) {
+		dev_err(handle->dev, "Function %d has 0 elements", selector);
+		return -ENODATA;
+	}
+
+	func->groups = devm_kmalloc_array(handle->dev, func->nr_groups,
+					       sizeof(*func->groups),
+					       GFP_KERNEL);
+	if (!func->groups) {
+		ret = -ENOMEM;
+		goto err;
+	}
+
+	ret = scmi_pinctrl_list_associations(handle, selector, FUNCTION_TYPE,
+					     func->nr_groups, func->groups);
+	if (ret)
+		goto err_funcs;
+
+	func->present = true;
+	return 0;
+
+ err_funcs:
+	kfree(func->groups);
+ err:
+	kfree(func->name);
+	return ret;
+}
+
+static int scmi_pinctrl_get_function_name(const struct scmi_handle *handle,
+					  u32 selector, const char **name)
+{
+	int ret;
+	struct scmi_pinctrl_info *pi;
+
+	if (!handle || !handle->pinctrl_priv || !name)
+		return -EINVAL;
+
+	pi = handle->pinctrl_priv;
+
+	if (selector > pi->nr_functions)
+		return -EINVAL;
+
+	if (!pi->functions[selector].present) {
+		ret = scmi_pinctrl_get_function_info(handle, selector,
+						     &pi->functions[selector]);
+		if (ret)
+			return ret;
 	}
 
 	*name = pi->functions[selector].name;
 	return 0;
 }
+
 //todo test
 static int scmi_pinctrl_get_function_groups(const struct scmi_handle *handle,
 									 u32 selector, u32 *nr_groups,
