@@ -327,7 +327,6 @@ out:
 	return ret;
 }
 
-//NOT TESTESD
 static int scmi_pinctrl_request_config(const struct scmi_handle *handle,
 				   u32 selector,
 				   enum scmi_pinctrl_selector_type type,
@@ -369,14 +368,12 @@ static int scmi_pinctrl_request_config(const struct scmi_handle *handle,
 	return ret;
 }
 
-//not tested
 static int scmi_pinctrl_get_config(const struct scmi_handle *handle, u32 pin,
 				   u32 *config)
 {
 	return scmi_pinctrl_request_config(handle, pin, PIN_TYPE, config);
 }
 
-//not tested
 static int scmi_pinctrl_apply_config(const struct scmi_handle *handle,
 				     u32 selector,
 				     enum scmi_pinctrl_selector_type type,
