@@ -286,8 +286,8 @@ struct scmi_pinctrl_ops {
 	int (*get_function_name)(const struct scmi_handle *handle, u32 selector,
 				 const char **name);
 	int (*get_function_groups)(const struct scmi_handle *handle,
-				   u32 selector, u32 *nr_groups,
-				   const u16 **groups);
+				   u32 selector, unsigned *nr_groups,
+				   const unsigned **groups);
 	int (*set_mux)(const struct scmi_handle *handle, u32 selector,
 		       u32 group);
 	int (*get_pins)(const struct scmi_handle *handle, u32 *nr_pins,
