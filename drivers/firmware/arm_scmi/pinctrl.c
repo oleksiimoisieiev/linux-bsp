@@ -686,7 +686,6 @@ static int scmi_pinctrl_get_function_name(const struct scmi_handle *handle,
 	return 0;
 }
 
-//todo test
 static int scmi_pinctrl_get_function_groups(const struct scmi_handle *handle,
 					    u32 selector, unsigned *nr_groups,
 					    const unsigned **groups)
