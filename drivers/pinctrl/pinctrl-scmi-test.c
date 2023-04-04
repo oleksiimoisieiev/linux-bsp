@@ -594,7 +594,7 @@ MODULE_DEVICE_TABLE(scmi, scmi_id_table);
 			printk("***** %s %d passed ****\n", __func__, __LINE__); \
 		} } while (0);
 
-static int run_tests(struct scmi_handle *handle)
+static int run_tests(void)
 {
 	return 0;
 }
@@ -619,15 +619,6 @@ static int scmi_pinctrl_probe(struct scmi_device *sdev)
 	pmx->pctl_desc.pctlops = &pinctrl_scmi_pinctrl_ops;
 	pmx->pctl_desc.pmxops = &pinctrl_scmi_pinmux_ops;
 	pmx->pctl_desc.confops = &pinctrl_scmi_pinconf_ops;
-
-        ret = run_tests();
-	if (ret) {
-		printk("TESTS FAILED!\n");
-		return -EINVAL;
-	}
-
-	printk("TESTS PASSED!\n");
-	return 0;
 
 	ret = pinctrl_scmi_get_pins(pmx->handle, &pmx->pctl_desc.npins,
 								&pmx->pctl_desc.pins);
@@ -662,6 +653,16 @@ static int scmi_pinctrl_probe(struct scmi_device *sdev)
 		}
 	}
 
+	/********************/
+	ret = run_tests();
+	if (ret) {
+		printk("TESTS FAILED!\n");
+		return -EINVAL;
+	}
+
+	printk("TESTS PASSED!\n");
+	return -EINVAL;
+        /**********************/
 	return pinctrl_enable(pmx->pctldev);
 
 clean:
