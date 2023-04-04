@@ -60,8 +60,8 @@ struct scmi_pinctrl_info {
 
 struct scmi_conf_tx {
 	__le32 identifier;
-#define SET_TYPE_BITS(attr, x) (((attr)&0xFFFFFCFF) | (x & 0x2) << 8)
-#define SET_CONFIG(attr, x) ((attr) & 0xFF) | (x * 0xFF)
+#define SET_TYPE_BITS(attr, x) (((attr) & 0xFFFFFCFF) | (x & 0x3) << 8)
+#define SET_CONFIG(attr, x) ((attr) & 0xFF) | (x & 0xFF)
 	__le32 attributes;
 };
 
@@ -136,6 +136,7 @@ static int scmi_pinctrl_validate_id(const struct scmi_handle *handle,
 	switch (type) {
 	case PIN_TYPE:
 		pi = handle->pinctrl_priv;
+
 		return (identifier < pi->nr_pins) ? 0 : -EINVAL;
 	case GROUP_TYPE:
 		return (identifier <
@@ -323,26 +324,39 @@ out:
 	scmi_xfer_put(handle, t);
 	return ret;
 }
+
 //NOT TESTESD
-static int scmi_pinctrl_get_config(const struct scmi_handle *handle, u32 pin,
-								   u32 *config)
+static int scmi_pinctrl_request_config(const struct scmi_handle *handle,
+				   u32 selector,
+				   enum scmi_pinctrl_selector_type type,
+				   u32 *config)
 {
 	struct scmi_xfer *t;
 	struct scmi_conf_tx *tx;
 	__le32 *packed_config;
+	u32 attributes = 0;
 	int ret;
-	//TODO amoi we support only for pin right now
 
-	ret = scmi_xfer_get_init(handle, PINCTRL_CONFIG_GET, SCMI_PROTOCOL_PINCTRL,
+	if (!handle || !config || type == FUNCTION_TYPE)
+		return -EINVAL;
+
+	ret = scmi_pinctrl_validate_id(handle, selector, type);
+	if (ret)
+		return ret;
+
+	ret = scmi_xfer_get_init(handle, PINCTRL_CONFIG_GET,
+				 SCMI_PROTOCOL_PINCTRL,
 				 sizeof(*tx), sizeof(*packed_config), &t);
 	if (ret)
 		return ret;
 
 	tx = t->tx.buf;
 	packed_config = t->rx.buf;
-	tx->identifier = cpu_to_le32(pin);
-	tx->attributes = SET_TYPE_BITS(tx->attributes, cpu_to_le32(PIN_TYPE));
-	tx->attributes = SET_CONFIG(tx->attributes, cpu_to_le32(*config));
+	tx->identifier = cpu_to_le32(selector);
+	attributes = SET_TYPE_BITS(attributes, type);
+	attributes = SET_CONFIG(attributes, *config);
+
+	tx->attributes = cpu_to_le32(attributes);
 
 	ret = scmi_do_xfer(handle, t);
 
@@ -354,34 +368,75 @@ static int scmi_pinctrl_get_config(const struct scmi_handle *handle, u32 pin,
 }
 
 //not tested
-static int scmi_pinctrl_set_config(const struct scmi_handle *handle, u32 pin,
-				   enum scmi_pinctrl_selector_type type, u32 config)
+static int scmi_pinctrl_get_config(const struct scmi_handle *handle, u32 pin,
+				   u32 *config)
+{
+	return scmi_pinctrl_request_config(handle, pin, PIN_TYPE, config);
+}
+
+//not tested
+static int scmi_pinctrl_apply_config(const struct scmi_handle *handle,
+				     u32 selector,
+				     enum scmi_pinctrl_selector_type type,
+				     u32 config)
 {
 	struct scmi_xfer *t;
 	struct scmi_conf_tx *tx;
+	u32 attributes = 0;
 	int ret;
-	//TODO amoi we support only for pin right now
 
-	ret = scmi_xfer_get_init(handle, PINCTRL_CONFIG_SET, SCMI_PROTOCOL_PINCTRL,
+	if (!handle || type == FUNCTION_TYPE)
+		return -EINVAL;
+
+	ret = scmi_pinctrl_validate_id(handle, selector, type);
+	if (ret)
+		return ret;
+
+	ret = scmi_xfer_get_init(handle, PINCTRL_CONFIG_SET,
+				 SCMI_PROTOCOL_PINCTRL,
 				 sizeof(*tx), 0, &t);
 	if (ret)
 		return ret;
 
 	tx = t->tx.buf;
-	tx->identifier = cpu_to_le32(pin);
-	tx->attributes = SET_TYPE_BITS(tx->attributes, cpu_to_le32(PIN_TYPE));
-	tx->attributes = SET_CONFIG(tx->attributes, cpu_to_le32(config));
+	tx->identifier = cpu_to_le32(selector);
+	attributes = SET_TYPE_BITS(attributes, type);
+	attributes = SET_CONFIG(attributes, config);
+	tx->attributes = cpu_to_le32(attributes);
 
 	ret = scmi_do_xfer(handle, t);
 
 	scmi_xfer_put(handle, t);
 	return ret;
 }
+
+//not tested
+static int scmi_pinctrl_set_config(const struct scmi_handle *handle, u32 pin,
+				   u32 config)
+{
+	return scmi_pinctrl_apply_config(handle, pin, PIN_TYPE, config);
+}
+
+// not tested
+static int scmi_pinctrl_get_config_group(const struct scmi_handle *handle,
+					 u32 group, u32 *config)
+{
+	return scmi_pinctrl_request_config(handle, group, GROUP_TYPE, config);
+}
+
+// not tested
+static int scmi_pinctrl_set_config_group(const struct scmi_handle *handle,
+					 u32 group, u32 config)
+{
+	return scmi_pinctrl_apply_config(handle, group, GROUP_TYPE, config);
+}
+
 //not tested
 
-static int scmi_pinctrl_function_select(const struct scmi_handle *handle, u32 identifier,
-				   enum scmi_pinctrl_selector_type type,
-				   u32 function_id)
+static int scmi_pinctrl_function_select(const struct scmi_handle *handle,
+					u32 identifier,
+					enum scmi_pinctrl_selector_type type,
+					u32 function_id)
 { //done not tested
 	struct scmi_xfer *t;
 	struct scmi_func_set_tx {
@@ -477,7 +532,7 @@ static int scmi_pinctrl_get_group_name(const struct scmi_handle *handle,
 	return 0;
 }
 /////
-
+//todo test
 static int scmi_pinctrl_get_group_pins(const struct scmi_handle *handle,
 				       u32 selector, const unsigned **pins,
 				       unsigned *nr_pins)
@@ -546,7 +601,7 @@ static int scmi_pinctrl_get_group_pins(const struct scmi_handle *handle,
 	return ret;
 }
 
-
+//todo test
 static int scmi_pinctrl_get_function_name(const struct scmi_handle *handle,
 								   u32 selector, const char **name)
 {
@@ -564,7 +619,7 @@ static int scmi_pinctrl_get_function_name(const struct scmi_handle *handle,
 	*name = pi->functions[selector].name;
 	return 0;
 }
-
+//todo test
 static int scmi_pinctrl_get_function_groups(const struct scmi_handle *handle,
 									 u32 selector, u32 *nr_groups,
 									 const u16 **groups)
@@ -714,98 +769,22 @@ static int scmi_pinctrl_get_pins(const struct scmi_handle *handle, u32 *nr_pins,
 	return ret;
 }
 
-/* static int scmi_pinctrl_set_config(const struct scmi_handle *handle, u32 pin, */
-/* 				  u32 config) */
-/* { */
-/* 	struct scmi_xfer *t; */
-/* 	struct scmi_conf_tx { */
-/* 		__le32 pin; */
-/* 		__le32 config; */
-/* 	} *tx; */
-/* 	int ret; */
-/* 	return 0; */
-/* 	/\* ret = scmi_xfer_get_init(handle, SET_CONFIG, SCMI_PROTOCOL_PINCTRL, *\/ */
-/* 	/\* 						 sizeof(*tx), 0, &t); *\/ */
-/* 	/\* if (ret) *\/ */
-/* 	/\* 	return ret; *\/ */
-
-/* 	tx = t->tx.buf; */
-/* 	tx->pin = cpu_to_le32(pin); */
-/* 	tx->config = cpu_to_le32(config); */
-/* 	ret = scmi_do_xfer(handle, t); */
-
-/* 	scmi_xfer_put(handle, t); */
-/* 	return ret; */
-/* } */
-
-static int scmi_pinctrl_get_config_group(const struct scmi_handle *handle,
-										 u32 group, u32 *config)
-{
-	struct scmi_xfer *t;
-	struct scmi_conf_tx {
-		__le32 group;
-		__le32 config;
-	} *tx;
-	__le32 *packed_config;
-	int ret;
-	return 0;
-	/* ret = scmi_xfer_get_init(handle, GET_CONFIG_GROUP, SCMI_PROTOCOL_PINCTRL, */
-	/* 						 sizeof(*tx), sizeof(*packed_config), &t); */
-	/* if (ret) */
-	/* 	return ret; */
-
-	tx = t->tx.buf;
-	packed_config = t->rx.buf;
-	tx->group = cpu_to_le32(group);
-	tx->config = cpu_to_le32(*config);
-	ret = scmi_do_xfer(handle, t);
-
-	if (!ret)
-		*config = le32_to_cpu(*packed_config);
-
-	scmi_xfer_put(handle, t);
-	return ret;
-}
-
-static int scmi_pinctrl_set_config_group(const struct scmi_handle *handle,
-										 u32 group, u32 config)
-{
-	struct scmi_xfer *t;
-	struct scmi_conf_tx {
-		__le32 group;
-		__le32 config;
-	} *tx;
-	int ret;
-	return 0;
-	/* ret = scmi_xfer_get_init(handle, SET_CONFIG_GROUP, SCMI_PROTOCOL_PINCTRL, */
-	/* 						 sizeof(*tx), 0, &t); */
-	/* if (ret) */
-	/* 	return ret; */
-
-	tx = t->tx.buf;
-	tx->group = cpu_to_le32(group);
-	tx->config = cpu_to_le32(config);
-	ret = scmi_do_xfer(handle, t);
-
-	scmi_xfer_put(handle, t);
-	return ret;
-}
 
 static const struct scmi_pinctrl_ops pinctrl_ops = {
-	.get_groups_count = scmi_pinctrl_get_groups_count, //+
-	.get_group_name = scmi_pinctrl_get_group_name,
-	.get_group_pins = scmi_pinctrl_get_group_pins,
+	.get_groups_count = scmi_pinctrl_get_groups_count,
+	.get_group_name = scmi_pinctrl_get_group_name, //TODO test
+	.get_group_pins = scmi_pinctrl_get_group_pins, //TODO test
 	.get_functions_count = scmi_pinctrl_get_functions_count,
-	.get_function_name = scmi_pinctrl_get_function_name,
-	.get_function_groups = scmi_pinctrl_get_function_groups,
-	.set_mux = scmi_pinctrl_set_mux,
-	.get_pins = scmi_pinctrl_get_pins,
-	.get_config = scmi_pinctrl_get_config,
-	/* .set_config = scmi_pinctrl_set_config, */
-	.get_config_group = scmi_pinctrl_get_config_group,
-	.set_config_group = scmi_pinctrl_set_config_group,
-	/* .request_pin = scmi_pinctrl_request_pin, */
-	/* .free_pin = scmi_pinctrl_free_pin */
+	.get_function_name = scmi_pinctrl_get_function_name, //TODO test
+	.get_function_groups = scmi_pinctrl_get_function_groups, //TODO test
+	.set_mux = scmi_pinctrl_set_mux,//TODO test
+	.get_pins = scmi_pinctrl_get_pins,//TODO test
+	.get_config = scmi_pinctrl_get_config,//TODO test
+	.set_config = scmi_pinctrl_set_config, //TODO test
+	.get_config_group = scmi_pinctrl_get_config_group,//TODO test
+	.set_config_group = scmi_pinctrl_set_config_group,//TODO test
+	/* .request_pin = scmi_pinctrl_request_pin, *///TODO test
+	/* .free_pin = scmi_pinctrl_free_pin *///TODO test
 };
 
 
@@ -1178,20 +1157,15 @@ static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)
 	/* printk("TESTS PASSED!\n"); */
 	/* return -EINVAL; */
 	/*******************/
-	/* return 0; */
+	return 0;
 free:
 	if (pinfo) {
-		if (pinfo->pins)
-			devm_kfree(handle->dev, pinfo->pins);
-
-		if (pinfo->functions)
-			devm_kfree(handle->dev,pinfo->functions);
-
-		if (pinfo->groups)
-			devm_kfree(handle->dev,pinfo->groups);
-
-		devm_kfree(handle->dev,pinfo);
+		devm_kfree(handle->dev, pinfo->pins);
+		devm_kfree(handle->dev, pinfo->functions);
+		devm_kfree(handle->dev, pinfo->groups);
 	}
+
+	devm_kfree(handle->dev,pinfo);
 
 	return ret;
 }
