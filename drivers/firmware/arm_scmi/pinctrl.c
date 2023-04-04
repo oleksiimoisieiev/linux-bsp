@@ -505,7 +505,7 @@ static int scmi_pinctrl_free(const struct scmi_handle *handle, u32 identifier,
 		__le32 flags;
 	} *tx;
 
-	if (!handle)
+	if (!handle || type == FUNCTION_TYPE)
 		return -EINVAL;
 
 	ret = scmi_xfer_get_init(handle, PINCTRL_RELEASE, SCMI_PROTOCOL_PINCTRL,
@@ -1132,7 +1132,7 @@ static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)
 {
 	u32 version;
 	struct scmi_pinctrl_info *pinfo;
-	int ret; // ,i;
+	int ret;
 
 	if (!handle)
 		return -EINVAL;
@@ -1174,16 +1174,6 @@ static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)
 		goto free;
 	}
 
-	// - get it from get_pins
-	// go through groups
-	/* for (i = 0; i < pinfo->nr_groups; i++) { */
-	/* 	ret = scmi_pinctrl_attributes(handle, type, GROUP_TYPE, */
-	/* 				      char **name, int *n_elems) */
-	/* 		pinfo->groups[i].name */
-	/* 		pinfo->nr_groups = n_elems; */
-	/* } */
-	// go through functions
-
 	pinfo->version = version;
 	handle->pinctrl_ops = &pinctrl_ops;
 	handle->pinctrl_priv = pinfo;
@@ -1206,7 +1196,7 @@ free:
 		devm_kfree(handle->dev, pinfo->groups);
 	}
 
-	devm_kfree(handle->dev,pinfo);
+	devm_kfree(handle->dev, pinfo);
 
 	return ret;
 }
