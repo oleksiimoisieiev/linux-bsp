@@ -4,6 +4,7 @@
  *
  * Copyright (C) 2021 EPAM.
  */
+#define DEBUG
 
 #include <linux/device.h>
 #include <linux/err.h>
@@ -20,7 +21,6 @@
 #include "pinctrl-utils.h"
 #include "core.h"
 #include "pinconf.h"
-#define DEBUG
 #define DRV_NAME "scmi-pinctrl"
 #define DT_PROPERTY_NAME_BUF_MAX 32
 
@@ -599,8 +599,129 @@ MODULE_DEVICE_TABLE(scmi, scmi_id_table);
 			printk("***** %s %d passed ****\n", __func__, __LINE__); \
 		} } while (0);
 
+static int conf_tests(void)
+{
+	const struct scmi_handle *handle = pmx->handle;
+	__u32 lconfig;
+	unsigned long config;
+	int ret;
+	tst_head("ops->get_config");
+
+	lconfig = 4; /*bias-pull-up */
+	ret = handle->pinctrl_ops->set_config(handle, 0, lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	lconfig = 4; /*bias-pull-up */
+	ret = handle->pinctrl_ops->get_config(handle, 0, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 1022, "Unexpected config %d", lconfig);
+
+
+
+
+
+
+
+
+
+
+	lconfig = 10; /*drive strength */
+	ret = handle->pinctrl_ops->get_config(handle, 0, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+	lconfig = 4; /*bias-pull-up */
+	ret = handle->pinctrl_ops->get_config(handle, 0, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+	lconfig = 19; /*power-source */
+	ret = handle->pinctrl_ops->get_config(handle, 1, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+	lconfig = 4; /*bias-pull-up */
+	ret = handle->pinctrl_ops->get_config(handle, 24, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+	lconfig = 4; /*bias-pull-up */
+	ret = handle->pinctrl_ops->get_config(handle, 999, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+	lconfig = 0;
+	ret = handle->pinctrl_ops->get_config(handle, 1, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+	lconfig = 999;
+	ret = handle->pinctrl_ops->get_config(handle, 1, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+	lconfig = 1; /*bias-bus-hold */
+	ret = handle->pinctrl_ops->get_config(handle, 1, NULL);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+	lconfig = 999; /*bias-bus-hold */
+	ret = handle->pinctrl_ops->get_config(NULL, 1, &lconfig);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(lconfig == 3, "Unexpected config %d", lconfig);
+
+
+	tst_head("ops->get_config");
+	config = 1; /*bias-bus-hold */
+	ret = pinctrl_scmi_pinconf_get(pmx->pctldev, 0, &config);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(config == 3, "Unexpected config %ld", config);
+
+	config = 1; /*bias-bus-hold */
+	ret = pinctrl_scmi_pinconf_get(pmx->pctldev, 1, &config);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(config == 3, "Unexpected config %ld", config);
+
+	config = 1; /*bias-bus-hold */
+	ret = pinctrl_scmi_pinconf_get(pmx->pctldev, 24, &config);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(config == 3, "Unexpected config %ld", config);
+
+	config = 1; /*bias-bus-hold */
+	ret = pinctrl_scmi_pinconf_get(pmx->pctldev, 999, &config);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(config == 3, "Unexpected config %ld", config);
+
+	config = 0; /*bias-bus-hold */
+	ret = pinctrl_scmi_pinconf_get(pmx->pctldev, 1, &config);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(config == 3, "Unexpected config %ld", config);
+
+	config = 999; /*bias-bus-hold */
+	ret = pinctrl_scmi_pinconf_get(pmx->pctldev, 1, &config);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(config == 3, "Unexpected config %ld", config);
+
+	config = 1; /*bias-bus-hold */
+	ret = pinctrl_scmi_pinconf_get(pmx->pctldev, 1, NULL);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(config == 3, "Unexpected config %ld", config);
+
+	config = 999; /*bias-bus-hold */
+	ret = pinctrl_scmi_pinconf_get(NULL, 1, NULL);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	tst_chk(config == 3, "Unexpected config %ld", config);
+	return 0;
+}
+
 static int run_tests(void)
 {
+	int ret;
+
+	ret = conf_tests();
+	if (ret)
+		return ret;
+
 	return 0;
 }
 
