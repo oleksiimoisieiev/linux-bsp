@@ -1141,14 +1141,14 @@ static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)
 	}
 
 	pinfo->groups = devm_kcalloc(handle->dev, pinfo->nr_groups,
-								 sizeof(*pinfo->groups), GFP_KERNEL);
+				     sizeof(*pinfo->groups), GFP_KERNEL);
 	if (!pinfo->groups) {
 		ret = -ENOMEM;
 		goto free;
 	}
 
 	pinfo->functions = devm_kcalloc(handle->dev, pinfo->nr_functions,
-								 sizeof(*pinfo->functions), GFP_KERNEL);
+					sizeof(*pinfo->functions), GFP_KERNEL);
 	if (!pinfo->functions) {
 		ret = -ENOMEM;
 		goto free;
