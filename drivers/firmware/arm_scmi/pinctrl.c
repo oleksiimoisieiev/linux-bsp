@@ -35,12 +35,12 @@ enum scmi_pinctrl_selector_type {
 };
 
 struct scmi_group_info {
-	bool has_name;
-	char name[SCMI_MAX_STR_SIZE];
-	unsigned group_pins[SCMI_PINCTRL_MAX_PINS_CNT];
-	unsigned nr_pins;
+	bool present;
+	char *name;
+	u16 *group_pins;
+	u16 nr_pins;
 };
-
+	//todo  remove SCMI_PINCTRL_MAX_PINS_CNG
 struct scmi_function_info {
 	bool has_name;
 	char name[SCMI_MAX_STR_SIZE];
@@ -513,18 +513,71 @@ static int scmi_pinctrl_free(const struct scmi_handle *handle, u32 identifier,
 	return ret;
 }
 
-//not tested
-static int scmi_pinctrl_get_group_name(const struct scmi_handle *handle,
-					       u32 selector, const char **name)
+static int scmi_pinctrl_get_group_info(const struct scmi_handle *handle,
+				      u32 selector,
+				      struct scmi_group_info *group)
 {
-	struct scmi_pinctrl_info *pi = handle->pinctrl_priv;
+	int ret = 0;
+	struct scmi_pinctrl_info *pi;
+
+	if (!handle || !handle->pinctrl_priv || !group)
+		return -EINVAL;
+
+	pi = handle->pinctrl_priv;
+
+	ret = scmi_pinctrl_attributes(handle, GROUP_TYPE, selector,
+				      &group->name,
+				      &group->nr_pins);
+	if (ret)
+		return ret;
+
+	if (!group->nr_pins) {
+		dev_err(handle->dev, "Group %d has 0 elements",group->nr_pins);
+		return -ENODATA;
+	}
+
+	group->group_pins = devm_kmalloc_array(handle->dev, group->nr_pins,
+					      sizeof(*group->group_pins),
+					      GFP_KERNEL);
+	if (!group->group_pins) {
+		ret = -ENOMEM;
+		goto err;
+	}
+
+	ret = scmi_pinctrl_list_associations(handle, selector, GROUP_TYPE,
+					     group->nr_pins, group->group_pins);
+	if (ret)
+		goto err_groups;
+
+	group->present = true;
+	return 0;
+
+ err_groups:
+	kfree(group->group_pins);
+ err:
+	kfree(group->name);
+	return ret;
+}
+
+static int scmi_pinctrl_get_group_name(const struct scmi_handle *handle,
+				       u32 selector, const char **name)
+{
+	int ret;
+	struct scmi_pinctrl_info *pi;
+
+	if (!handle || !handle->pinctrl_priv || !*name)
+		return -EINVAL;
+
+	pi = handle->pinctrl_priv;
 
 	if (selector > SCMI_PINCTRL_MAX_GROUPS_CNT)
 		return -EINVAL;
 
-	if (!pi->groups[selector].has_name) {
-		snprintf(pi->groups[selector].name, SCMI_MAX_STR_SIZE, "%d", selector);
-		pi->groups[selector].has_name = true;
+	if (!pi->groups[selector].present) {
+		ret = scmi_pinctrl_get_group_info(handle, selector,
+						  &pi->groups[selector]);
+		if (ret)
+			return ret;
 	}
 
 	*name = pi->groups[selector].name;
@@ -537,68 +590,69 @@ static int scmi_pinctrl_get_group_pins(const struct scmi_handle *handle,
 				       u32 selector, const unsigned **pins,
 				       unsigned *nr_pins)
 {
-	struct scmi_pinctrl_info *pi = handle->pinctrl_priv;
-	u16 *list;
-	int loop, ret = 0;
-	struct scmi_xfer *t;
-	__le32 *num_ret;
-	u16 tot_num_ret = 0, loop_num_ret;
-	struct scmi_group_pins_tx {
-		__le16 selector;
-		__le16 skip;
-	} *tx;
+	/* struct scmi_pinctrl_info *pi = handle->pinctrl_priv; */
+	/* u16 *list; */
+	/* int loop, ret = 0; */
+	/* struct scmi_xfer *t; */
+	/* __le32 *num_ret; */
+	/* u16 tot_num_ret = 0, loop_num_ret; */
+	/* struct scmi_group_pins_tx { */
+	/* 	__le16 selector; */
+	/* 	__le16 skip; */
+	/* } *tx; */
 
+	/* return 0; */
+
+	/* if (selector > SCMI_PINCTRL_MAX_GROUPS_CNT) */
+	/* 	return -EINVAL; */
+
+	/* if (pi->groups[selector].nr_pins) { */
+	/* 	*nr_pins = pi->groups[selector].nr_pins; */
+	/* 	*pins = pi->groups[selector].group_pins; */
+	/* 	return 0; */
+	/* } */
+
+	/* /\* ret = scmi_xfer_get_init(handle, GET_GROUP_PINS, *\/ */
+	/* /\* 			 SCMI_PROTOCOL_PINCTRL, sizeof(*tx), 0, &t); *\/ */
+	/* /\* if (ret) *\/ */
+	/* /\* 	return ret; *\/ */
+
+	/* tx = t->tx.buf; */
+	/* num_ret = t->rx.buf; */
+	/* list = t->rx.buf + sizeof(*num_ret); */
+
+	/* do { */
+	/* 	/\* Set the number of pins to be skipped/already read *\/ */
+	/* 	tx->skip = cpu_to_le16(tot_num_ret); */
+	/* 	tx->selector = cpu_to_le16(selector); */
+
+	/* 	ret = scmi_do_xfer(handle, t); */
+	/* 	if (ret) */
+	/* 		break; */
+
+	/* 	loop_num_ret = le32_to_cpu(*num_ret); */
+	/* 	if (tot_num_ret + loop_num_ret > SCMI_PINCTRL_MAX_PINS_CNT) { */
+	/* 		dev_err(handle->dev, "No. of PINS > SCMI_PINCTRL_MAX_PINS_CNT"); */
+	/* 		break; */
+	/* 	} */
+
+	/* 	for (loop = 0; loop < loop_num_ret; loop++) { */
+	/* 		pi->groups[selector].group_pins[tot_num_ret + loop] = */
+	/* 			le16_to_cpu(list[loop]); */
+	/* 	} */
+
+	/* 	tot_num_ret += loop_num_ret; */
+
+	/* 	scmi_reset_rx_to_maxsz(handle, t); */
+	/* } while (loop_num_ret); */
+
+	/* scmi_xfer_put(handle, t); */
+	/* pi->groups[selector].nr_pins = tot_num_ret; */
+	/* *pins = pi->groups[selector].group_pins; */
+	/* *nr_pins = pi->groups[selector].nr_pins; */
+
+	/* return ret; */
 	return 0;
-
-	if (selector > SCMI_PINCTRL_MAX_GROUPS_CNT)
-		return -EINVAL;
-
-	if (pi->groups[selector].nr_pins) {
-		*nr_pins = pi->groups[selector].nr_pins;
-		*pins = pi->groups[selector].group_pins;
-		return 0;
-	}
-
-	/* ret = scmi_xfer_get_init(handle, GET_GROUP_PINS, */
-	/* 			 SCMI_PROTOCOL_PINCTRL, sizeof(*tx), 0, &t); */
-	/* if (ret) */
-	/* 	return ret; */
-
-	tx = t->tx.buf;
-	num_ret = t->rx.buf;
-	list = t->rx.buf + sizeof(*num_ret);
-
-	do {
-		/* Set the number of pins to be skipped/already read */
-		tx->skip = cpu_to_le16(tot_num_ret);
-		tx->selector = cpu_to_le16(selector);
-
-		ret = scmi_do_xfer(handle, t);
-		if (ret)
-			break;
-
-		loop_num_ret = le32_to_cpu(*num_ret);
-		if (tot_num_ret + loop_num_ret > SCMI_PINCTRL_MAX_PINS_CNT) {
-			dev_err(handle->dev, "No. of PINS > SCMI_PINCTRL_MAX_PINS_CNT");
-			break;
-		}
-
-		for (loop = 0; loop < loop_num_ret; loop++) {
-			pi->groups[selector].group_pins[tot_num_ret + loop] =
-				le16_to_cpu(list[loop]);
-		}
-
-		tot_num_ret += loop_num_ret;
-
-		scmi_reset_rx_to_maxsz(handle, t);
-	} while (loop_num_ret);
-
-	scmi_xfer_put(handle, t);
-	pi->groups[selector].nr_pins = tot_num_ret;
-	*pins = pi->groups[selector].group_pins;
-	*nr_pins = pi->groups[selector].nr_pins;
-
-	return ret;
 }
 
 //todo test
@@ -1112,22 +1166,25 @@ static int scmi_pinctrl_protocol_init(struct scmi_handle *handle)
 	if (ret)
 		goto free;
 
-	pinfo->pins = devm_kcalloc(handle->dev, pinfo->nr_pins,
-				     sizeof(*pinfo->pins), GFP_KERNEL);
+	pinfo->pins = devm_kmalloc_array(handle->dev, pinfo->nr_pins,
+					 sizeof(*pinfo->pins),
+					 GFP_KERNEL | __GFP_ZERO);
 	if (!pinfo->pins) {
 		ret = -ENOMEM;
 		goto free;
 	}
 
-	pinfo->groups = devm_kcalloc(handle->dev, pinfo->nr_groups,
-				     sizeof(*pinfo->groups), GFP_KERNEL);
+	pinfo->groups = devm_kmalloc_array(handle->dev, pinfo->nr_groups,
+					   sizeof(*pinfo->groups),
+					   GFP_KERNEL | __GFP_ZERO);
 	if (!pinfo->groups) {
 		ret = -ENOMEM;
 		goto free;
 	}
 
-	pinfo->functions = devm_kcalloc(handle->dev, pinfo->nr_functions,
-					sizeof(*pinfo->functions), GFP_KERNEL);
+	pinfo->functions = devm_kmalloc_array(handle->dev, pinfo->nr_functions,
+					      sizeof(*pinfo->functions),
+					      GFP_KERNEL | __GFP_ZERO);
 	if (!pinfo->functions) {
 		ret = -ENOMEM;
 		goto free;
