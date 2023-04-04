@@ -106,9 +106,9 @@ static void str_from_int_free(const char *addr)
 {
 	if (likely(addr))
 		kfree(addr);
-}//TODO test
+}
 
-
+//TODO test
 #ifdef CONFIG_OF
 static void pinctrl_scmi_dt_free_map(struct pinctrl_dev *pctldev,
 			       struct pinctrl_map *map, unsigned num_maps)
@@ -482,7 +482,12 @@ static const struct pinmux_ops pinctrl_scmi_pinmux_ops = {
 static int pinctrl_scmi_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
 			      unsigned long *config)
 {
-	const struct scmi_handle *handle = pmx->handle;
+	const struct scmi_handle *handle;
+
+	if (!pmx || !pmx->handle || !config)
+		return -EINVAL;
+
+	handle = pmx->handle;
 
 	return handle->pinctrl_ops->get_config(handle, _pin, (u32 *)config);
 }
@@ -608,7 +613,7 @@ static int scmi_pinctrl_probe(struct scmi_device *sdev)
 		return -ENOMEM;
 
 	pmx->handle = sdev->handle;
-	if (unlikely(!pmx->handle)) {
+	if (!pmx->handle) {
 		ret = -ENOMEM;
 		goto clean;
 	}
