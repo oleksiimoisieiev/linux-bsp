@@ -72,25 +72,29 @@ static const char *pinctrl_scmi_get_group_name(struct pinctrl_dev *pctldev,
 
 	return name;
 }
-//TODO test
 
 static int pinctrl_scmi_get_group_pins(struct pinctrl_dev *pctldev,
-				unsigned selector, const unsigned **pins, unsigned *num_pins)
+				       unsigned selector, const unsigned **pins,
+				       unsigned *num_pins)
 {
-	const struct scmi_handle *handle = pmx->handle;
+	const struct scmi_handle *handle;
+
+	if (!pmx || !pmx->handle)
+		return -EINVAL;
+
+	handle = pmx->handle;
 
 	return handle->pinctrl_ops->get_group_pins(handle, selector,
-											   pins, num_pins);
+						   pins, num_pins);
 }
-//TODO test
 
-static void pinctrl_scmi_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
-				unsigned offset)
+static void pinctrl_scmi_pin_dbg_show(struct pinctrl_dev *pctldev,
+				      struct seq_file *s,
+				      unsigned offset)
 {
 	seq_puts(s, DRV_NAME);
 }
-//TODO test
-
+//todo remove
 static const char *int_to_str_alloc(unsigned int param)
 {
 	char buf[DT_PROPERTY_NAME_BUF_MAX];
@@ -105,7 +109,7 @@ static const char *int_to_str_alloc(unsigned int param)
 	return res;
 }
 //TODO test
-
+//todo remove
 static void str_from_int_free(const char *addr)
 {
 	if (likely(addr))
@@ -394,59 +398,61 @@ static const char *pinctrl_scmi_get_function_name(struct pinctrl_dev *pctldev,
 //TODO test
 
 static int pinctrl_scmi_get_function_groups(struct pinctrl_dev *pctldev,
-				      unsigned selector,
-				      const char * const **groups,
-				      unsigned * const num_groups)
+					    unsigned selector,
+					    const char * const **groups,
+					    unsigned * const num_groups)
 {
-	const u16 *group_ids;
-	const struct scmi_handle *handle = pmx->handle;
+	const unsigned *group_ids;
 	int ret, i;
+
+	const struct scmi_handle *handle;
+
+	if (!pmx || !pmx->handle)
+		return -EINVAL;
+
+	handle = pmx->handle;
 
 	if ((selector < pmx->nr_functions)
 		&& (pmx->functions[selector].num_groups)) {
-		dev_dbg(pmx->dev, "1");
 		*groups = (const char * const *)pmx->functions[selector].groups;
 		*num_groups = pmx->functions[selector].num_groups;
 		return 0;
 	}
 
 	ret = handle->pinctrl_ops->get_function_groups(handle, selector,
-					&pmx->functions[selector].num_groups, &group_ids);
+						       &pmx->functions[selector].num_groups,
+						       &group_ids);
 	if (ret) {
 		dev_err(pmx->dev, "Unable to get function groups, err %d", ret);
 		return ret;
 	}
 
 	*num_groups = pmx->functions[selector].num_groups;
+	if (!*num_groups)
+		return -EINVAL;
 
-	pmx->functions[selector].groups = devm_kzalloc(pmx->dev,
-			sizeof(*pmx->functions[selector].groups) * *num_groups,
-			GFP_KERNEL);
-	if (unlikely(!pmx->functions[selector].groups))
+	pmx->functions[selector].groups =
+		devm_kmalloc_array(pmx->dev, *num_groups,
+			sizeof(*pmx->functions[selector].groups),
+			GFP_KERNEL | __GFP_ZERO);
+	if (!pmx->functions[selector].groups)
 		return -ENOMEM;
 
 	for (i = 0; i < *num_groups; i++) {
-		pmx->functions[selector].groups[i] = int_to_str_alloc(group_ids[i]);
-		if (unlikely(!pmx->functions[selector].groups[i])) {
+		pmx->functions[selector].groups[i]
+			= pinctrl_scmi_get_group_name(pmx->pctldev, group_ids[i]);
+		if (!pmx->functions[selector].groups[i]) {
 			ret = -ENOMEM;
 			goto error;
 		}
 	}
 
 	*groups = (const char * const *)pmx->functions[selector].groups;
-	dev_dbg(pmx->dev, "got groups %d", *num_groups);
 
 	return 0;
 
 error:
-	if (pmx->functions[selector].num_groups) {
-		for (i = 0; i < pmx->functions[selector].num_groups; i++) {
-			if (pmx->functions[selector].groups[i])
-				str_from_int_free(pmx->functions[selector].groups[i]);
-		}
-
-		kfree(pmx->functions[selector].groups);
-	}
+	kfree(pmx->functions[selector].groups);
 
 	return ret;
 }
@@ -799,22 +805,18 @@ static int fn_getinfo_test(void)
 	ret = handle->pinctrl_ops->get_function_name(handle, 0, &name);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	printk("name = %s", name);
-	kfree(name);
 
 	ret = handle->pinctrl_ops->get_function_name(handle, 0, &name);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	printk("name = %s", name);
-	kfree(name);
 
 	ret = handle->pinctrl_ops->get_function_name(handle, 15, &name);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	printk("name = %s", name);
-	kfree(name);
 
 	ret = handle->pinctrl_ops->get_function_name(handle, 15, &name);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	printk("name = %s", name);
-	kfree(name);
 
 	ret = handle->pinctrl_ops->get_function_name(handle, 999, &name);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
@@ -827,22 +829,18 @@ static int fn_getinfo_test(void)
 	name = pinctrl_scmi_get_function_name(pmx->pctldev, 0);
 	tst_chk(name != 0, "Unexpected name %d", -1);
 	printk("name = %s", name);
-	kfree(name);
 
 	name = pinctrl_scmi_get_function_name(pmx->pctldev, 0);
 	tst_chk(name !=0, "Unexpected name %d", -1);
 	printk("name = %s", name);
-	kfree(name);
 
 	name = pinctrl_scmi_get_function_name(pmx->pctldev, 14);
 	tst_chk(name != 0, "Unexpected name %d", -1);
 	printk("name = %s", name);
-	kfree(name);
 
 	name = pinctrl_scmi_get_function_name(pmx->pctldev, 14);
 	tst_chk(name !=0, "Unexpected name %d", -1);
 	printk("name = %s", name);
-	kfree(name);
 
 	name = pinctrl_scmi_get_function_name(pmx->pctldev, 999);
 	tst_chk(name == 0, "Unexpected name %d", -1);
@@ -856,6 +854,69 @@ static int fn_getinfo_test(void)
 	return 0;
 }
 
+static void show_array(unsigned *array, unsigned size)
+{
+	int i;
+	for (i = 0; i < size; i++) {
+		printk("%d ", array[i]);
+	}
+	printk("\n");
+}
+
+static int gr_get_pins_test(void)
+{
+	const struct scmi_handle *handle = pmx->handle;
+	int ret;
+	unsigned num_pins;
+	const unsigned *pins;
+	tst_head("ops->get_group_pins");
+
+	ret = handle->pinctrl_ops->get_group_pins(handle, 0, &pins, &num_pins);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_pins = %d\n", num_pins);
+	show_array(pins, num_pins);
+
+	ret = handle->pinctrl_ops->get_group_pins(handle, 15, &pins, &num_pins);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_pins = %d\n", num_pins);
+	show_array(pins, num_pins);
+
+	ret = handle->pinctrl_ops->get_group_pins(handle, 999, &pins, &num_pins);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = handle->pinctrl_ops->get_group_pins(handle, 999, NULL, &num_pins);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_get_group_pins(pmx->pctldev, 0, &pins, &num_pins);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_pins = %d\n", num_pins);
+	show_array(pins, num_pins);
+
+	ret = pinctrl_scmi_get_group_pins(pmx->pctldev, 0, &pins, &num_pins);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_pins = %d\n", num_pins);
+	show_array(pins, num_pins);
+
+	ret = pinctrl_scmi_get_group_pins(pmx->pctldev, 15, &pins, &num_pins);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_pins = %d\n", num_pins);
+	show_array(pins, num_pins);
+
+	ret = pinctrl_scmi_get_group_pins(pmx->pctldev, 999, &pins, &num_pins);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_get_group_pins(pmx->pctldev, 0, NULL, &num_pins);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_get_group_pins(pmx->pctldev, 0, &pins, NULL);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_get_group_pins(NULL, 0, NULL, &num_pins);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	return 0;
+}
+
 static int run_tests(void)
 {
 	int ret;
@@ -865,6 +926,10 @@ static int run_tests(void)
 		return ret;
 
 	ret = fn_getinfo_test();
+	if (ret)
+		return ret;
+
+	ret = gr_get_pins_test();
 	if (ret)
 		return ret;
 
