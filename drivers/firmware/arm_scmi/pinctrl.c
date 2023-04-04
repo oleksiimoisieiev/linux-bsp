@@ -37,8 +37,8 @@ enum scmi_pinctrl_selector_type {
 struct scmi_group_info {
 	bool present;
 	char *name;
-	u16 *group_pins;
-	u16 nr_pins;
+	unsigned *group_pins;
+	unsigned nr_pins;
 };
 //todo  remove SCMI_PINCTRL_MAX_PINS_CNG
 //todo  remove [SCMI_PINCTRL_MAX_GROUPS_CNT];
@@ -46,8 +46,8 @@ struct scmi_group_info {
 struct scmi_function_info {
 	bool present;
 	char *name;
-	u16 *groups;
-	u16 nr_groups;
+	unsigned *groups;
+	unsigned nr_groups;
 };
 
 struct scmi_pinctrl_info {
@@ -207,7 +207,7 @@ static int scmi_pinctrl_get_name(const struct scmi_handle *handle,
 
 static int scmi_pinctrl_attributes(const struct scmi_handle *handle,
 				   enum scmi_pinctrl_selector_type type,
-				   u32 selector, char **name, u16 *n_elems)
+				   u32 selector, char **name, unsigned *n_elems)
 {
 	int ret = 0;
 	struct scmi_xfer *t;
@@ -259,7 +259,7 @@ static int scmi_pinctrl_attributes(const struct scmi_handle *handle,
 static int scmi_pinctrl_list_associations(const struct scmi_handle *handle,
 					  u32 selector,
 					  enum scmi_pinctrl_selector_type type,
-					  uint16_t size, uint16_t *array)
+					  uint16_t size, unsigned *array)
 {
 	struct scmi_xfer *t;
 	struct scmi_pinctrl_list_assoc_tx {
@@ -586,80 +586,38 @@ static int scmi_pinctrl_get_group_name(const struct scmi_handle *handle,
 
 	return 0;
 }
-/////
-//todo test
+
 static int scmi_pinctrl_get_group_pins(const struct scmi_handle *handle,
 				       u32 selector, const unsigned **pins,
 				       unsigned *nr_pins)
 {
-	/* struct scmi_pinctrl_info *pi = handle->pinctrl_priv; */
-	/* u16 *list; */
-	/* int loop, ret = 0; */
-	/* struct scmi_xfer *t; */
-	/* __le32 *num_ret; */
-	/* u16 tot_num_ret = 0, loop_num_ret; */
-	/* struct scmi_group_pins_tx { */
-	/* 	__le16 selector; */
-	/* 	__le16 skip; */
-	/* } *tx; */
+	int ret;
+	struct scmi_pinctrl_info *pi;
 
-	/* return 0; */
+	if (!handle || !handle->pinctrl_priv || !pins || !nr_pins)
+		return -EINVAL;
 
-	/* if (selector > SCMI_PINCTRL_MAX_GROUPS_CNT) */
-	/* 	return -EINVAL; */
+	pi = handle->pinctrl_priv;
 
-	/* if (pi->groups[selector].nr_pins) { */
-	/* 	*nr_pins = pi->groups[selector].nr_pins; */
-	/* 	*pins = pi->groups[selector].group_pins; */
-	/* 	return 0; */
-	/* } */
+	if (selector > pi->nr_groups)
+		return -EINVAL;
 
-	/* /\* ret = scmi_xfer_get_init(handle, GET_GROUP_PINS, *\/ */
-	/* /\* 			 SCMI_PROTOCOL_PINCTRL, sizeof(*tx), 0, &t); *\/ */
-	/* /\* if (ret) *\/ */
-	/* /\* 	return ret; *\/ */
+	if (!pi->groups[selector].present) {
+		ret = scmi_pinctrl_get_group_info(handle, selector,
+						  &pi->groups[selector]);
+		if (ret)
+			return ret;
+	}
 
-	/* tx = t->tx.buf; */
-	/* num_ret = t->rx.buf; */
-	/* list = t->rx.buf + sizeof(*num_ret); */
+	*pins = pi->groups[selector].group_pins;
+	*nr_pins = pi->groups[selector].nr_pins;
 
-	/* do { */
-	/* 	/\* Set the number of pins to be skipped/already read *\/ */
-	/* 	tx->skip = cpu_to_le16(tot_num_ret); */
-	/* 	tx->selector = cpu_to_le16(selector); */
-
-	/* 	ret = scmi_do_xfer(handle, t); */
-	/* 	if (ret) */
-	/* 		break; */
-
-	/* 	loop_num_ret = le32_to_cpu(*num_ret); */
-	/* 	if (tot_num_ret + loop_num_ret > SCMI_PINCTRL_MAX_PINS_CNT) { */
-	/* 		dev_err(handle->dev, "No. of PINS > SCMI_PINCTRL_MAX_PINS_CNT"); */
-	/* 		break; */
-	/* 	} */
-
-	/* 	for (loop = 0; loop < loop_num_ret; loop++) { */
-	/* 		pi->groups[selector].group_pins[tot_num_ret + loop] = */
-	/* 			le16_to_cpu(list[loop]); */
-	/* 	} */
-
-	/* 	tot_num_ret += loop_num_ret; */
-
-	/* 	scmi_reset_rx_to_maxsz(handle, t); */
-	/* } while (loop_num_ret); */
-
-	/* scmi_xfer_put(handle, t); */
-	/* pi->groups[selector].nr_pins = tot_num_ret; */
-	/* *pins = pi->groups[selector].group_pins; */
-	/* *nr_pins = pi->groups[selector].nr_pins; */
-
-	/* return ret; */
-	return 0;
+	return ret;
 }
 
 static int scmi_pinctrl_get_function_info(const struct scmi_handle *handle,
-					   u32 selector,
-					   struct scmi_function_info *func)
+					  u32 selector,
+					  struct scmi_function_info *func)
 {
 	int ret = 0;
 	struct scmi_pinctrl_info *pi;
@@ -730,66 +688,27 @@ static int scmi_pinctrl_get_function_name(const struct scmi_handle *handle,
 
 //todo test
 static int scmi_pinctrl_get_function_groups(const struct scmi_handle *handle,
-									 u32 selector, u32 *nr_groups,
-									 const u16 **groups)
+					    u32 selector, unsigned *nr_groups,
+					    const unsigned **groups)
 {
-	struct scmi_pinctrl_info *pi = handle->pinctrl_priv;
-	u16 *list;
-	int loop, ret = 0;
-	struct scmi_xfer *t;
-	struct scmi_func_groups {
-		__le16 selector;
-		__le16 skip;
-	} *tx;
-	__le32 *num_ret;
-	u16 tot_num_ret = 0, loop_num_ret;
+	int ret;
+	struct scmi_pinctrl_info *pi;
 
-	return 0;
-
-	if (selector >= pi->nr_functions)
+	if (!handle || !handle->pinctrl_priv || !groups || !nr_groups)
 		return -EINVAL;
 
-	if (pi->functions[selector].nr_groups) {
-		*nr_groups = pi->functions[selector].nr_groups;
-		*groups = pi->functions[selector].groups;
-		return 0;
+	pi = handle->pinctrl_priv;
+
+	if (selector > pi->nr_functions)
+		return -EINVAL;
+
+	if (!pi->functions[selector].present) {
+		ret = scmi_pinctrl_get_function_info(handle, selector,
+						     &pi->functions[selector]);
+		if (ret)
+			return ret;
 	}
 
-	/* ret = scmi_xfer_get_init(handle, GET_FUNCTION_GROUPS, */
-	/* 			 SCMI_PROTOCOL_PINCTRL, sizeof(*tx), 0, &t); */
-	/* if (ret) */
-	/* 	return ret; */
-
-	tx = t->tx.buf;
-	num_ret = t->rx.buf;
-	list = t->rx.buf + sizeof(*num_ret);
-
-	do {
-		/* Set the number of pins to be skipped/already read */
-		tx->skip = cpu_to_le16(tot_num_ret);
-		tx->selector = cpu_to_le16(selector);
-
-		ret = scmi_do_xfer(handle, t);
-		if (ret)
-			break;
-
-		loop_num_ret = le32_to_cpu(*num_ret);
-		if (tot_num_ret + loop_num_ret > SCMI_PINCTRL_MAX_GROUPS_CNT) {
-			dev_err(handle->dev, "No. of PINS > SCMI_PINCTRL_MAX_GROUPS_CNT");
-			break;
-		}
-
-		for (loop = 0; loop < loop_num_ret; loop++) {
-			pi->functions[selector].groups[tot_num_ret + loop] = le16_to_cpu(list[loop]);
-		}
-
-		tot_num_ret += loop_num_ret;
-
-		scmi_reset_rx_to_maxsz(handle, t);
-	} while (loop_num_ret);
-
-	scmi_xfer_put(handle, t);
-	pi->functions[selector].nr_groups = tot_num_ret;
 	*groups = pi->functions[selector].groups;
 	*nr_groups = pi->functions[selector].nr_groups;
 
@@ -921,7 +840,7 @@ static int test_pinctrl_attributes(struct scmi_handle *handle)
 {
 	int ret;
 	char *name;
-	u16 n_elems;
+	unsigned n_elems;
 	tst_head("scmi_pinctrl_attributes");
 
 	ret = scmi_pinctrl_attributes(handle, GROUP_TYPE, 1, NULL, &n_elems);
@@ -977,7 +896,7 @@ static int test_pinctrl_attributes(struct scmi_handle *handle)
 	return 0;
 }
 
-static void show_array(uint16_t *array, uint8_t size)
+static void show_array(unsigned *array, uint8_t size)
 {
 	int i;
 	for (i = 0; i < size; i++) {
@@ -989,15 +908,14 @@ static void show_array(uint16_t *array, uint8_t size)
 static int test_pinctrl_list_assoc(struct scmi_handle *handle)
 {
 	int ret;
-	char *name;
-	uint16_t array[512];
+	unsigned array[100];
 
 	printk(" === %s %d\n", __func__, __LINE__);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
+	memset(array, 0, 100 * sizeof(uint16_t));
 	tst_head("scmi_pinctrl_list_associations");
 
-	ret = scmi_pinctrl_list_associations(handle, 1, GROUP_TYPE, 512, NULL);
+	ret = scmi_pinctrl_list_associations(handle, 1, GROUP_TYPE, 100, NULL);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
 
 	ret = scmi_pinctrl_list_associations(handle, 1, GROUP_TYPE, 0, NULL);
@@ -1009,52 +927,52 @@ static int test_pinctrl_list_assoc(struct scmi_handle *handle)
 	ret = scmi_pinctrl_list_associations(handle, 1, PIN_TYPE, 0, array);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 0, GROUP_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 0, GROUP_TYPE, 100, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 12, GROUP_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 12, GROUP_TYPE, 100, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 19, GROUP_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 19, GROUP_TYPE, 100, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 24, GROUP_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 24, GROUP_TYPE, 100, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 999, GROUP_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 999, GROUP_TYPE, 100, array);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 0, FUNCTION_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 0, FUNCTION_TYPE, 100, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 12, FUNCTION_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 12, FUNCTION_TYPE, 100, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 19, FUNCTION_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 19, FUNCTION_TYPE, 100, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 24, FUNCTION_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 24, FUNCTION_TYPE, 100, array);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	show_array(array, 10);
 
-	memset(array, 0, 512 * sizeof(uint16_t));
-	ret = scmi_pinctrl_list_associations(handle, 999, FUNCTION_TYPE, 512, array);
+	memset(array, 0, 100 * sizeof(uint16_t));
+	ret = scmi_pinctrl_list_associations(handle, 999, FUNCTION_TYPE, 100, array);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
 
 	return 0;
