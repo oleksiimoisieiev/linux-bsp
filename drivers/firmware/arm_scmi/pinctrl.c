@@ -288,7 +288,7 @@ static int scmi_pinctrl_list_associations(const struct scmi_handle *handle,
 
 	ret = scmi_xfer_get_init(handle, PINCTRL_LIST_ASSOCIATIONS,
 				 SCMI_PROTOCOL_PINCTRL, sizeof(*tx),
-				 sizeof(*rx), &t);
+				 0, &t);
 	if (ret)
 		return ret;
 
