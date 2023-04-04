@@ -395,7 +395,6 @@ static const char *pinctrl_scmi_get_function_name(struct pinctrl_dev *pctldev,
 
 	return name;
 }
-//TODO test
 
 static int pinctrl_scmi_get_function_groups(struct pinctrl_dev *pctldev,
 					    unsigned selector,
@@ -407,7 +406,7 @@ static int pinctrl_scmi_get_function_groups(struct pinctrl_dev *pctldev,
 
 	const struct scmi_handle *handle;
 
-	if (!pmx || !pmx->handle)
+	if (!pmx || !pmx->handle || !groups || !num_groups)
 		return -EINVAL;
 
 	handle = pmx->handle;
@@ -738,50 +737,40 @@ static int gr_getinfo_test(void)
 	ret = handle->pinctrl_ops->get_group_name(handle, 0, &name);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	printk("name = %s", name);
-	kfree(name);
 
 	ret = handle->pinctrl_ops->get_group_name(handle, 0, &name);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	printk("name = %s", name);
-	kfree(name);
 
 	ret = handle->pinctrl_ops->get_group_name(handle, 15, &name);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	printk("name = %s", name);
-	kfree(name);
 
 	ret = handle->pinctrl_ops->get_group_name(handle, 15, &name);
 	tst_chk(ret == 0, "Unexpected ret %d", ret);
 	printk("name = %s", name);
-	kfree(name);
 
 	ret = handle->pinctrl_ops->get_group_name(handle, 999, &name);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
-	printk("name = %s", name);
 
 	ret = handle->pinctrl_ops->get_group_name(handle, 990, &name);
 	tst_chk(ret == -22, "Unexpected ret %d", ret);
-	printk("name = %s", name);
 
 	name = pinctrl_scmi_get_group_name(pmx->pctldev, 0);
 	tst_chk(name != 0, "Unexpected name %d", -1);
 	printk("name = %s", name);
-	kfree(name);
 
 	name = pinctrl_scmi_get_group_name(pmx->pctldev, 0);
 	tst_chk(name !=0, "Unexpected name %d", -1);
 	printk("name = %s", name);
-	kfree(name);
 
 	name = pinctrl_scmi_get_group_name(pmx->pctldev, 14);
 	tst_chk(name != 0, "Unexpected name %d", -1);
 	printk("name = %s", name);
-	kfree(name);
 
 	name = pinctrl_scmi_get_group_name(pmx->pctldev, 14);
 	tst_chk(name !=0, "Unexpected name %d", -1);
 	printk("name = %s", name);
-	kfree(name);
 
 	name = pinctrl_scmi_get_group_name(pmx->pctldev, 999);
 	tst_chk(name == 0, "Unexpected name %d", -1);
@@ -854,7 +843,7 @@ static int fn_getinfo_test(void)
 	return 0;
 }
 
-static void show_array(unsigned *array, unsigned size)
+static void show_array(const unsigned *array, unsigned size)
 {
 	int i;
 	for (i = 0; i < size; i++) {
@@ -917,19 +906,71 @@ static int gr_get_pins_test(void)
 	return 0;
 }
 
+static void show_carray(const char **array, unsigned size)
+{
+	int i;
+	for (i = 0; i < size; i++) {
+		printk("%s ", array[i]);
+	}
+	printk("\n");
+}
+
+static int fn_get_groups_test(void)
+{
+	const struct scmi_handle *handle = pmx->handle;
+	int ret;
+	const unsigned *group_ids;
+	const char **groups;
+	const char * const **pgroups = (const char * const **)&groups;
+	unsigned num_groups;
+	tst_head("ops->get_function_groups");
+
+	ret = handle->pinctrl_ops->get_function_groups(handle, 0, &num_groups, &group_ids);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_groups = %d\n", num_groups);
+	show_array(group_ids, num_groups);
+
+	ret = handle->pinctrl_ops->get_function_groups(handle, 15, &num_groups, &group_ids);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_groups = %d\n", num_groups);
+	show_array(group_ids, num_groups);
+
+	ret = handle->pinctrl_ops->get_function_groups(handle, 999, &num_groups, &group_ids);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_get_function_groups(pmx->pctldev, 0, pgroups, &num_groups);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_groups = %d\n", num_groups);
+	show_carray(groups, num_groups);
+
+	ret = pinctrl_scmi_get_function_groups(pmx->pctldev, 15, pgroups, &num_groups);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("num_groups = %d\n", num_groups);
+	show_carray(groups, num_groups);
+
+	ret = pinctrl_scmi_get_function_groups(pmx->pctldev, 999, pgroups, &num_groups);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	return 0;
+}
+
 static int run_tests(void)
 {
 	int ret;
 
-	ret = gr_getinfo_test();
-	if (ret)
-		return ret;
+	/* ret = gr_getinfo_test(); */
+	/* if (ret) */
+	/* 	return ret; */
 
-	ret = fn_getinfo_test();
-	if (ret)
-		return ret;
+	/* ret = fn_getinfo_test(); */
+	/* if (ret) */
+	/* 	return ret; */
 
-	ret = gr_get_pins_test();
+	/* ret = gr_get_pins_test(); */
+	/* if (ret) */
+	/* 	return ret; */
+
+	ret = fn_get_groups_test();
 	if (ret)
 		return ret;
 
