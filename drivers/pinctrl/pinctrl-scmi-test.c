@@ -43,11 +43,15 @@ struct scmi_pinctrl {
 };
 
 static struct scmi_pinctrl *pmx;
-//TODO test
 
 static int pinctrl_scmi_get_groups_count(struct pinctrl_dev *pctldev)
 {
-	const struct scmi_handle *handle = pmx->handle;
+	const struct scmi_handle *handle;
+
+	if (!pmx || !pmx->handle)
+		return -EINVAL;
+
+	handle = pmx->handle;
 
 	return handle->pinctrl_ops->get_groups_count(handle);
 }
@@ -366,11 +370,15 @@ static const struct pinctrl_ops pinctrl_scmi_pinctrl_ops = {
 	.dt_free_map = pinctrl_scmi_dt_free_map,
 #endif
 };
-//TODO test
 
 static int pinctrl_scmi_get_functions_count(struct pinctrl_dev *pctldev)
 {
-	const struct scmi_handle *handle = pmx->handle;
+	const struct scmi_handle *handle;
+
+	if (!pmx || !pmx->handle)
+		return -EINVAL;
+
+	handle = pmx->handle;
 
 	return handle->pinctrl_ops->get_functions_count(handle);
 }
@@ -464,15 +472,18 @@ static int pinctrl_scmi_func_set_mux(struct pinctrl_dev *pctldev,
 
 	return handle->pinctrl_ops->set_mux(handle, selector, group);
 }
-//TODO test
 
 static int pinctrl_scmi_request(struct pinctrl_dev *pctldev, unsigned offset)
 {
-	const struct scmi_handle *handle = pmx->handle;
+	const struct scmi_handle *handle;
+
+	if (!pmx || !pmx->handle)
+		return -EINVAL;
+
+	handle = pmx->handle;
 
 	return handle->pinctrl_ops->request_pin(handle, offset);
 }
-//TODO test
 
 static int pinctrl_scmi_free(struct pinctrl_dev *pctldev, unsigned offset)
 {
@@ -480,7 +491,6 @@ static int pinctrl_scmi_free(struct pinctrl_dev *pctldev, unsigned offset)
 
 	return handle->pinctrl_ops->free_pin(handle, offset);
 }
-//TODO test
 
 static const struct pinmux_ops pinctrl_scmi_pinmux_ops = {
 	.request	= pinctrl_scmi_request,
@@ -954,6 +964,38 @@ static int fn_get_groups_test(void)
 	return 0;
 }
 
+static int req_free_test(void)
+{
+	int ret;
+	tst_head("free -> release");
+
+	ret = pinctrl_scmi_request(pmx->pctldev, 10);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_free(pmx->pctldev, 10);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_request(pmx->pctldev, 11);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_request(pmx->pctldev, 11);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_free(pmx->pctldev, 11);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_free(pmx->pctldev, 11);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_request(pmx->pctldev, 999);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_free(pmx->pctldev, 999);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	return 0;
+}
+
 static int run_tests(void)
 {
 	int ret;
@@ -970,13 +1012,17 @@ static int run_tests(void)
 	/* if (ret) */
 	/* 	return ret; */
 
-	ret = fn_get_groups_test();
-	if (ret)
-		return ret;
-
-	/* ret = conf_tests(); */
+	/* ret = fn_get_groups_test(); */
 	/* if (ret) */
 	/* 	return ret; */
+
+	/* ret = req_free_test(); */
+	/* if (ret) */
+	/* 	return ret; */
+
+	ret = conf_tests();
+	if (ret)
+		return ret;
 
 	return 0;
 }
