@@ -98,27 +98,6 @@ static void pinctrl_scmi_pin_dbg_show(struct pinctrl_dev *pctldev,
 {
 	seq_puts(s, DRV_NAME);
 }
-//todo remove
-static const char *int_to_str_alloc(unsigned int param)
-{
-	char buf[DT_PROPERTY_NAME_BUF_MAX];
-	char *res;
-	int size;
-
-	size = snprintf(buf, DT_PROPERTY_NAME_BUF_MAX, "%u", param);
-	if (!size)
-		return NULL;
-
-	res = kmemdup(buf, size + 1, GFP_KERNEL);
-	return res;
-}
-//TODO test
-//todo remove
-static void str_from_int_free(const char *addr)
-{
-	if (likely(addr))
-		kfree(addr);
-}
 
 //TODO test
 #ifdef CONFIG_OF
@@ -361,10 +340,10 @@ done:
 #endif /* CONFIG_OF */
 
 static const struct pinctrl_ops pinctrl_scmi_pinctrl_ops = {
-	.get_groups_count	= pinctrl_scmi_get_groups_count,
-	.get_group_name		= pinctrl_scmi_get_group_name,
-	.get_group_pins		= pinctrl_scmi_get_group_pins,
-	.pin_dbg_show		= pinctrl_scmi_pin_dbg_show,
+	.get_groups_count = pinctrl_scmi_get_groups_count,
+	.get_group_name = pinctrl_scmi_get_group_name,
+	.get_group_pins = pinctrl_scmi_get_group_pins,
+	.pin_dbg_show = pinctrl_scmi_pin_dbg_show,
 #ifdef CONFIG_OF
 	.dt_node_to_map = pinctrl_scmi_dt_node_to_map,
 	.dt_free_map = pinctrl_scmi_dt_free_map,
@@ -464,7 +443,6 @@ error:
 
 	return ret;
 }
-//TODO test
 
 static int pinctrl_scmi_func_set_mux(struct pinctrl_dev *pctldev,
 				     unsigned selector, unsigned group)
@@ -499,12 +477,12 @@ static int pinctrl_scmi_free(struct pinctrl_dev *pctldev, unsigned offset)
 }
 
 static const struct pinmux_ops pinctrl_scmi_pinmux_ops = {
-	.request	= pinctrl_scmi_request,
-	.free	= pinctrl_scmi_free,
-	.get_functions_count	= pinctrl_scmi_get_functions_count,
-	.get_function_name	= pinctrl_scmi_get_function_name,
-	.get_function_groups	= pinctrl_scmi_get_function_groups,
-	.set_mux		= pinctrl_scmi_func_set_mux,
+	.request = pinctrl_scmi_request,
+	.free = pinctrl_scmi_free,
+	.get_functions_count = pinctrl_scmi_get_functions_count,
+	.get_function_name = pinctrl_scmi_get_function_name,
+	.get_function_groups = pinctrl_scmi_get_function_groups,
+	.set_mux = pinctrl_scmi_func_set_mux,
 };
 
 static int pinctrl_scmi_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
@@ -571,19 +549,21 @@ static int pinctrl_scmi_pinconf_group_set(struct pinctrl_dev *pctldev,
 };
 
 static const struct pinconf_ops pinctrl_scmi_pinconf_ops = {
-	.is_generic			= true,
-	.pin_config_get			= pinctrl_scmi_pinconf_get,
-	.pin_config_set			= pinctrl_scmi_pinconf_set,
-	.pin_config_group_set		= pinctrl_scmi_pinconf_group_set,
-	.pin_config_config_dbg_show	= pinconf_generic_dump_config,
+	.is_generic = true,
+	.pin_config_get = pinctrl_scmi_pinconf_get,
+	.pin_config_set = pinctrl_scmi_pinconf_set,
+	.pin_config_group_set = pinctrl_scmi_pinconf_group_set,
+	.pin_config_config_dbg_show = pinconf_generic_dump_config,
 };
 
 static int pinctrl_scmi_get_pins(struct scmi_handle *handle,
 				 unsigned *nr_pins,
 				 const struct pinctrl_pin_desc **pins)
 {
-	const u16 *pin_ids;
 	int ret, i;
+
+	if (!handle || !pins || !nr_pins)
+		return -EINVAL;
 
 	if (pmx->nr_pins) {
 		*pins = pmx->pins;
@@ -591,27 +571,34 @@ static int pinctrl_scmi_get_pins(struct scmi_handle *handle,
 		return 0;
 	}
 
-	ret = handle->pinctrl_ops->get_pins(handle, nr_pins, &pin_ids);
-	if (ret) {
-		dev_err(pmx->dev, "get pins failed with err %d", ret);
-		return ret;
-	}
+	*nr_pins = handle->pinctrl_ops->get_pins_count(handle);
 
 	pmx->nr_pins = *nr_pins;
-	pmx->pins = devm_kzalloc(pmx->dev, sizeof(*pmx->pins) * *nr_pins,
-							 GFP_KERNEL);
-	if (unlikely(!pmx->pins))
+	pmx->pins = devm_kmalloc_array(pmx->dev, *nr_pins, sizeof(*pmx->pins),
+				       GFP_KERNEL);
+	if (!pmx->pins)
 		return -ENOMEM;
 
 	for (i = 0; i < *nr_pins; i++) {
-		pmx->pins[i].number = pin_ids[i];
-		pmx->pins[i].name = int_to_str_alloc(pin_ids[i]);
+		pmx->pins[i].number = i;
+		ret = handle->pinctrl_ops->get_pin_name(handle, i,
+							&pmx->pins[i].name);
+		if (ret) {
+			dev_err(pmx->dev, "Can't get name for pin %d: rc %d",
+				i, ret);
+			goto err;
+		}
 	}
 
 	*pins = pmx->pins;
 	dev_dbg(pmx->dev, "got pins %d", *nr_pins);
 
 	return 0;
+ err:
+	kfree(pmx->pins);
+	pmx->nr_pins = 0;
+
+	return ret;
 }
 
 static const struct scmi_device_id scmi_id_table[] = {
@@ -1069,6 +1056,55 @@ static int set_mux_test(void)
 	return 0;
 }
 
+static void show_pinarray(const struct pinctrl_pin_desc *array, unsigned size)
+{
+	int i;
+	for (i = 0; i < size; i++) {
+		printk("pin[%d]=%s ", array[i].number, array[i].name);
+	}
+	printk("\n");
+}
+
+
+static int get_pins_tests(void)
+{
+	int ret;
+	unsigned nr_pins;
+	struct scmi_handle *handle = pmx->handle;
+	const char *name;
+	const struct pinctrl_pin_desc *pins;
+	tst_head("get pins");
+
+	ret = handle->pinctrl_ops->get_pin_name(handle, 0, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("Name = %s\n", name);
+
+	ret = handle->pinctrl_ops->get_pin_name(handle, 15, &name);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	printk("Name = %s\n", name);
+
+	ret = handle->pinctrl_ops->get_pin_name(handle, 999, &name);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = handle->pinctrl_ops->get_pin_name(handle, 12, NULL);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = handle->pinctrl_ops->get_pin_name(NULL, 1, &name);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_get_pins(handle, &nr_pins, &pins);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	show_pinarray(pins, 20);
+	printk("nr_pins = %d\n", nr_pins);
+
+	ret = pinctrl_scmi_get_pins(handle, NULL, &pins);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_get_pins(handle, &nr_pins, NULL);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	return 0;
+}
 
 static int run_tests(void)
 {
@@ -1098,7 +1134,11 @@ static int run_tests(void)
 	/* if (ret) */
 	/* 	return ret; */
 
-	ret = set_mux_test();
+	/* ret = set_mux_test(); */
+	/* if (ret) */
+	/* 	return ret; */
+
+	ret = get_pins_tests();
 	if (ret)
 		return ret;
 
@@ -1146,18 +1186,21 @@ static int scmi_pinctrl_probe(struct scmi_device *sdev)
 
 	if (pmx->nr_functions) {
 		pmx->functions =
-			devm_kzalloc(&sdev->dev, sizeof(*pmx->functions) *
-				     pmx->nr_functions, GFP_KERNEL);
-		if (unlikely(!pmx->functions)) {
+			devm_kmalloc_array(&sdev->dev, pmx->nr_functions,
+					   sizeof(*pmx->functions),
+					   GFP_KERNEL | __GFP_ZERO);
+		if (!pmx->functions) {
 			ret = -ENOMEM;
 			goto clean;
 		}
 	}
 
 	if (pmx->nr_groups) {
-		pmx->groups = devm_kzalloc(&sdev->dev, sizeof(*pmx->groups) *
-							   pmx->nr_groups, GFP_KERNEL);
-		if (unlikely(!pmx->groups)) {
+		pmx->groups =
+			devm_kmalloc_array(&sdev->dev, pmx->nr_groups,
+					   sizeof(*pmx->groups),
+					   GFP_KERNEL | __GFP_ZERO);
+		if (!pmx->groups) {
 			ret = -ENOMEM;
 			goto clean;
 		}
@@ -1172,7 +1215,7 @@ static int scmi_pinctrl_probe(struct scmi_device *sdev)
 
 	printk("TESTS PASSED!\n");
 	return -EINVAL;
-        /**********************/
+	/**********************/
 	return pinctrl_enable(pmx->pctldev);
 
 clean:
