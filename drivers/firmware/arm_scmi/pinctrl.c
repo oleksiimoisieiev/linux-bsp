@@ -493,6 +493,10 @@ static int scmi_pinctrl_request(const struct scmi_handle *handle,
 	if (!handle || type == FUNCTION_TYPE)
 		return -EINVAL;
 
+	ret = scmi_pinctrl_validate_id(handle, identifier, type);
+	if (ret)
+		return ret;
+
 	ret = scmi_xfer_get_init(handle, PINCTRL_REQUEST, SCMI_PROTOCOL_PINCTRL,
 				 sizeof(*tx), 0, &t);
 
@@ -523,6 +527,10 @@ static int scmi_pinctrl_free(const struct scmi_handle *handle, u32 identifier,
 
 	if (!handle || type == FUNCTION_TYPE)
 		return -EINVAL;
+
+	ret = scmi_pinctrl_validate_id(handle, identifier, type);
+	if (ret)
+		return ret;
 
 	ret = scmi_xfer_get_init(handle, PINCTRL_RELEASE, SCMI_PROTOCOL_PINCTRL,
 				 sizeof(*tx), 0, &t);
