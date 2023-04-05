@@ -40,14 +40,17 @@ struct scmi_group_info {
 	unsigned *group_pins;
 	unsigned nr_pins;
 };
-//todo  remove SCMI_PINCTRL_MAX_PINS_CNG
-//todo  remove [SCMI_PINCTRL_MAX_GROUPS_CNT];
 
 struct scmi_function_info {
 	bool present;
 	char *name;
 	unsigned *groups;
 	unsigned nr_groups;
+};
+
+struct scmi_pin_info {
+	bool present;
+	char *name;
 };
 
 struct scmi_pinctrl_info {
@@ -57,7 +60,7 @@ struct scmi_pinctrl_info {
 	u16 nr_pins;
 	struct scmi_group_info *groups;
 	struct scmi_function_info *functions;
-	u16 *pins;
+	struct scmi_pin_info *pins;
 };
 
 struct scmi_conf_tx {
@@ -112,6 +115,18 @@ static int scmi_pinctrl_get_groups_count(const struct scmi_handle *handle)
 	pi = handle->pinctrl_priv;
 
 	return pi->nr_groups;
+}
+
+static int scmi_pinctrl_get_pins_count(const struct scmi_handle *handle)
+{
+	struct scmi_pinctrl_info *pi;
+
+	if (!handle || !handle->pinctrl_priv)
+		return -ENODEV;
+
+	pi = handle->pinctrl_priv;
+
+	return pi->nr_pins;
 }
 
 static int scmi_pinctrl_get_functions_count(const struct scmi_handle *handle)
@@ -427,8 +442,6 @@ static int scmi_pinctrl_set_config_group(const struct scmi_handle *handle,
 	return scmi_pinctrl_apply_config(handle, group, GROUP_TYPE, config);
 }
 
-//not tested
-
 static int scmi_pinctrl_function_select(const struct scmi_handle *handle,
 					u32 identifier,
 					enum scmi_pinctrl_selector_type type,
@@ -728,67 +741,76 @@ static int scmi_pinctrl_get_function_groups(const struct scmi_handle *handle,
 
 	return ret;
 }
-//TODO test
+
 static int scmi_pinctrl_set_mux(const struct scmi_handle *handle, u32 selector,
 				u32 group)
 {
-	return scmi_pinctrl_function_select(handle, group, GROUP_TYPE, selector);
+	return scmi_pinctrl_function_select(handle, group, GROUP_TYPE,
+					    selector);
 }
-//todo test
-static int scmi_pinctrl_get_pins(const struct scmi_handle *handle, u32 *nr_pins,
-						  const u16 **pins)
+
+static int scmi_pinctrl_get_pin_info(const struct scmi_handle *handle,
+				     u32 selector, struct scmi_pin_info *pin)
 {
-	struct scmi_pinctrl_info *pi = handle->pinctrl_priv;
-	u16 *list;
-	int loop, ret = 0;
-	struct scmi_xfer *t;
-	__le32 *num_skip, *num_ret;
-	u32 tot_num_ret = 0, loop_num_ret;
+	int ret = 0;
+	struct scmi_pinctrl_info *pi;
+	unsigned n_elems;
+
+	if (!handle || !handle->pinctrl_priv || !pin)
+		return -EINVAL;
+
+	pi = handle->pinctrl_priv;
+
+	ret = scmi_pinctrl_attributes(handle, PIN_TYPE, selector,
+				      &pin->name,
+				      &n_elems);
+	if (ret)
+		return ret;
+
+	if (n_elems != pi->nr_pins) {
+		dev_err(handle->dev, "Wrong pin count expected %d has %d",
+			pi->nr_pins, n_elems);
+		return -ENODATA;
+	}
+
+	if (*(pin->name)== 0) {
+		dev_err(handle->dev, "Pin name is empty");
+		goto err;
+	}
+
+	pin->present = true;
 	return 0;
 
-	/* if (pi->nr_pins) { */
-	/* 	*nr_pins = pi->nr_pins; */
-	/* 	*pins = pi->pins; */
-	/* 	return 0; */
-	/* } */
-	/* ret = scmi_xfer_get_init(handle, GET_PINS, */
-	/* 			 SCMI_PROTOCOL_PINCTRL, sizeof(*num_skip), 0, &t); */
-	/* if (ret) */
-	/* 	return ret; */
-
-	num_skip = t->tx.buf;
-	num_ret = t->rx.buf;
-	list = t->rx.buf + sizeof(*num_ret);
-
-	do {
-		/* Set the number of pins to be skipped/already read */
-		*num_skip = cpu_to_le32(tot_num_ret);
-
-		ret = scmi_do_xfer(handle, t);
-		if (ret)
-			break;
-
-		loop_num_ret = le32_to_cpu(*num_ret);
-		if (tot_num_ret + loop_num_ret > SCMI_PINCTRL_MAX_PINS_CNT) {
-			dev_err(handle->dev, "No. of PINS > SCMI_PINCTRL_MAX_PINS_CNT");
-			break;
-		}
-
-		for (loop = 0; loop < loop_num_ret; loop++) {
-			pi->pins[tot_num_ret + loop] = le16_to_cpu(list[loop]);
-		}
-
-		tot_num_ret += loop_num_ret;
-
-		scmi_reset_rx_to_maxsz(handle, t);
-	} while (loop_num_ret);
-
-	scmi_xfer_put(handle, t);
-	pi->nr_pins = tot_num_ret;
-	*pins = pi->pins;
-	*nr_pins = pi->nr_pins;
-
+ err:
+	kfree(pin->name);
 	return ret;
+}
+
+static int scmi_pinctrl_get_pin_name(const struct scmi_handle *handle, u32 selector,
+				     const char **name)
+{
+
+	int ret;
+	struct scmi_pinctrl_info *pi;
+
+	if (!handle || !handle->pinctrl_priv || !name)
+		return -EINVAL;
+
+	pi = handle->pinctrl_priv;
+
+	if (selector > pi->nr_pins)
+		return -EINVAL;
+
+	if (!pi->pins[selector].present) {
+		ret = scmi_pinctrl_get_pin_info(handle, selector,
+						&pi->pins[selector]);
+		if (ret)
+			return ret;
+	}
+
+	*name = pi->pins[selector].name;
+
+	return 0;
 }
 
 
@@ -800,7 +822,8 @@ static const struct scmi_pinctrl_ops pinctrl_ops = {
 	.get_function_name = scmi_pinctrl_get_function_name,
 	.get_function_groups = scmi_pinctrl_get_function_groups,
 	.set_mux = scmi_pinctrl_set_mux,
-	.get_pins = scmi_pinctrl_get_pins,//TODO test
+	.get_pin_name = scmi_pinctrl_get_pin_name,
+	.get_pins_count = scmi_pinctrl_get_pins_count,
 	.get_config = scmi_pinctrl_get_config,
 	.set_config = scmi_pinctrl_set_config,
 	.get_config_group = scmi_pinctrl_get_config_group,
