@@ -16,9 +16,6 @@
 #define SCMI_MAX_STR_EXT_SIZE 64
 #define SCMI_MAX_NUM_RATES	16
 
-#define SCMI_PINCTRL_MAX_PINS_CNT 512
-#define SCMI_PINCTRL_MAX_GROUPS_CNT 512
-
 /**
  * struct scmi_revision_info - version information structure
  *
@@ -290,8 +287,9 @@ struct scmi_pinctrl_ops {
 				   const unsigned **groups);
 	int (*set_mux)(const struct scmi_handle *handle, u32 selector,
 		       u32 group);
-	int (*get_pins)(const struct scmi_handle *handle, u32 *nr_pins,
-			const u16 **pins);
+	int (*get_pin_name)(const struct scmi_handle *handle, u32 selector,
+			    const char **name);
+	int (*get_pins_count)(const struct scmi_handle *handle);
 	int (*get_config)(const struct scmi_handle *handle, u32 pin,
 			  u32 *config);
 	int (*set_config)(const struct scmi_handle *handle, u32 pin,
