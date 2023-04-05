@@ -447,7 +447,8 @@ static int pinctrl_scmi_get_function_groups(struct pinctrl_dev *pctldev,
 
 	for (i = 0; i < *num_groups; i++) {
 		pmx->functions[selector].groups[i]
-			= pinctrl_scmi_get_group_name(pmx->pctldev, group_ids[i]);
+			= pinctrl_scmi_get_group_name(pmx->pctldev,
+						      group_ids[i]);
 		if (!pmx->functions[selector].groups[i]) {
 			ret = -ENOMEM;
 			goto error;
@@ -466,9 +467,14 @@ error:
 //TODO test
 
 static int pinctrl_scmi_func_set_mux(struct pinctrl_dev *pctldev,
-				      unsigned selector, unsigned group)
+				     unsigned selector, unsigned group)
 {
-	const struct scmi_handle *handle = pmx->handle;
+	const struct scmi_handle *handle;
+
+	if (!pmx || !pmx->handle)
+		return -EINVAL;
+
+	handle = pmx->handle;
 
 	return handle->pinctrl_ops->set_mux(handle, selector, group);
 }
@@ -986,6 +992,7 @@ static int fn_get_groups_test(void)
 	return 0;
 }
 
+
 static int req_free_test(void)
 {
 	int ret;
@@ -1018,6 +1025,51 @@ static int req_free_test(void)
 	return 0;
 }
 
+static int set_mux_test(void)
+{
+	int ret;
+	const struct scmi_handle *handle = pmx->handle;
+
+	tst_head("set mux");
+
+	ret = handle->pinctrl_ops->set_mux(handle, 0, 1);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = handle->pinctrl_ops->set_mux(handle, 15, 1);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = handle->pinctrl_ops->set_mux(handle, 1, 15);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = handle->pinctrl_ops->set_mux(handle, 999, 1);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = handle->pinctrl_ops->set_mux(handle, 0, 999);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_func_set_mux(pmx->pctldev, 0, 1);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_func_set_mux(pmx->pctldev, 1, 1);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_func_set_mux(pmx->pctldev, 15, 1);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_func_set_mux(pmx->pctldev, 1, 15);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	ret = pinctrl_scmi_func_set_mux(pmx->pctldev, 0, 999);
+	tst_chk(ret == -22, "Unexpected ret %d", ret);
+	ret = pinctrl_scmi_func_set_mux(pmx->pctldev, 999, 1);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+	ret = pinctrl_scmi_func_set_mux(NULL, 0, 1);
+	tst_chk(ret == 0, "Unexpected ret %d", ret);
+
+	return 0;
+}
+
+
 static int run_tests(void)
 {
 	int ret;
@@ -1042,7 +1094,11 @@ static int run_tests(void)
 	/* if (ret) */
 	/* 	return ret; */
 
-	ret = conf_tests();
+	/* ret = conf_tests(); */
+	/* if (ret) */
+	/* 	return ret; */
+
+	ret = set_mux_test();
 	if (ret)
 		return ret;
 
@@ -1074,7 +1130,7 @@ static int scmi_pinctrl_probe(struct scmi_device *sdev)
 	pmx->pctl_desc.confops = &pinctrl_scmi_pinconf_ops;
 
 	ret = pinctrl_scmi_get_pins(pmx->handle, &pmx->pctl_desc.npins,
-								&pmx->pctl_desc.pins);
+				    &pmx->pctl_desc.pins);
 	if (ret)
 		goto clean;
 
@@ -1089,8 +1145,9 @@ static int scmi_pinctrl_probe(struct scmi_device *sdev)
 	pmx->nr_groups = pinctrl_scmi_get_groups_count(pmx->pctldev);
 
 	if (pmx->nr_functions) {
-		pmx->functions = devm_kzalloc(&sdev->dev, sizeof(*pmx->functions) *
-								  pmx->nr_functions, GFP_KERNEL);
+		pmx->functions =
+			devm_kzalloc(&sdev->dev, sizeof(*pmx->functions) *
+				     pmx->nr_functions, GFP_KERNEL);
 		if (unlikely(!pmx->functions)) {
 			ret = -ENOMEM;
 			goto clean;
