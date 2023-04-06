@@ -21,8 +21,8 @@
 #include "pinctrl-utils.h"
 #include "core.h"
 #include "pinconf.h"
+
 #define DRV_NAME "scmi-pinctrl"
-#define DT_PROPERTY_NAME_BUF_MAX 32
 
 struct scmi_pinctrl_funcs {
 	unsigned num_groups;
